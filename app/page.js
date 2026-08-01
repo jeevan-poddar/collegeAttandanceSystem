@@ -1,65 +1,77 @@
-import Image from "next/image";
+"use client";
+import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import { getUser } from "./action/getUser";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+const home = () => {
+  const [user, setUser] = useState(null);
+  const periods = [
+    { id: 1, time: "09:00 AM - 10:00 AM" },
+    { id: 2, time: "10:00 AM - 11:00 AM" },
+    { id: 3, time: "11:15 AM - 12:15 PM" },
+    { id: 4, time: "12:15 PM - 01:15 PM" },
+    { id: 5, time: "02:00 PM - 03:00 PM" },
+  ];
+  const MOCK_SCHEDULE = [
+    {
+      id: 1,
+      batch_code: "B1",
+      sem: 1,
+      section: "A",
+      subject: "Math",
+      roomNo: "101",
+      branch: "CSE",
+      status: "scheduled",
+      is_proxy: false,
+      
+
+
+    }
+  ];
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const response = await getUser();
+      if (response) {
+        setUser(response);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  if (user?.role === "faculty") {
+    return (
+      <>
+        <div>Welcome, {user?.full_name}! You are a faculty member.</div>
+        <div className="timeTabel">
+          <div className="">Time Table</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Monday</th>
+                <th>Tuesday</th>
+                <th>Wednesday</th>
+                <th>Thursday</th>
+                <th>Friday</th>
+                <th>Saturday</th>
+                <th>Sunday</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
-}
+      </>
+    );
+  } else if (user?.role === "student") {
+    return <div>Welcome, {user?.full_name}! You are a student.</div>;
+  } else if (user?.role === "hod") {
+    return <div>Welcome, {user?.full_name}! You are a head of department.</div>;
+  } else if (user?.role === "admin") {
+    return <div>Welcome, {user?.full_name}! You are an administrator.</div>;
+  } else {
+    return <div>Welcome, {user?.full_name}! Your role is not recognized.</div>;
+  }
+};
+
+export default home;
