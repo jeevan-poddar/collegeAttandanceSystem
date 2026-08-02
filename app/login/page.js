@@ -12,7 +12,7 @@ const login = () => {
     formState: { errors },
   } = useForm();
   const onSubmit = (data) => {
-    console.log(data);    
+    console.log(data);
   };
   return (
     <div>
@@ -57,12 +57,12 @@ const login = () => {
           </button>
         </form>
         <div className="text-center mt-4">
-          <p>
-            Don't have an account?{" "}
+          <div className="text-sm">
+            <span>Don't have an account?</span>
             <Link href="/signUp" className="text-blue-500 hover:underline">
               Sign up
             </Link>
-          </p>
+          </div>
         </div>
         <OAuthButton />
       </div>

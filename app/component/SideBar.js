@@ -11,12 +11,17 @@ const SideBar = () => {
             <Link href="/">Home</Link>
           </li>
           <li>
-            <Link href="/dashboard/faculty">DashBoard</Link>
+            <Link href="/dashboard/faculty">DashBoard Faculty</Link>
           </li>
           <li>
             <Link href="/dashboard/faculty/myBatches">My Batches</Link>
           </li>
-          <li><Link href="/dashboard/hod">Dashboard HOD</Link></li>
+          <li>
+            <Link href="/dashboard/hod">Dashboard HOD</Link>
+          </li>
+          <li>
+            <Link href="/dashboard/admin">Dashboard Admin</Link>
+          </li>
         </ul>
       </div>
     </div>

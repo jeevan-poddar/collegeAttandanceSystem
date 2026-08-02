@@ -278,18 +278,20 @@ const page = () => {
             {/* Footer */}
             <div className="p-4 border-t bg-gray-50">
               <div className="text-center text-sm text-gray-500">
-                Present:{" "}
-                {
-                  Object.values(attendance).filter(
-                    (status) => status === "present" || status === "late",
-                  ).length
-                }{" "}
-                | Absent:{" "}
-                {
-                  Object.values(attendance).filter(
-                    (status) => status === "absent",
-                  ).length
-                }
+                <span>
+                  Present:
+                  {
+                    Object.values(attendance).filter(
+                      (status) => status === "present" || status === "late",
+                    ).length
+                  }
+                  | Absent:
+                  {
+                    Object.values(attendance).filter(
+                      (status) => status === "absent",
+                    ).length
+                  }
+                </span>
               </div>
               <button
                 className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
