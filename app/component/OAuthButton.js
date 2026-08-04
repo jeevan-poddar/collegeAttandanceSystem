@@ -14,9 +14,9 @@ const OAuthButton = () => {
     });
   };
   return (
-    <div>
+    <div className="w-full">
       <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm transition flex items-center justify-center gap-2 text-sm"
         onClick={() => loginOAuth("google")}
       >
         Login with Google

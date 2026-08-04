@@ -5,29 +5,6 @@ import { getUser } from "./action/getUser";
 
 const home = () => {
   const [user, setUser] = useState(null);
-  const periods = [
-    { id: 1, time: "09:00 AM - 10:00 AM" },
-    { id: 2, time: "10:00 AM - 11:00 AM" },
-    { id: 3, time: "11:15 AM - 12:15 PM" },
-    { id: 4, time: "12:15 PM - 01:15 PM" },
-    { id: 5, time: "02:00 PM - 03:00 PM" },
-  ];
-  const MOCK_SCHEDULE = [
-    {
-      id: 1,
-      batch_code: "B1",
-      sem: 1,
-      section: "A",
-      subject: "Math",
-      roomNo: "101",
-      branch: "CSE",
-      status: "scheduled",
-      is_proxy: false,
-      
-
-
-    }
-  ];
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -39,39 +16,32 @@ const home = () => {
     fetchUser();
   }, []);
 
-  if (user?.role === "faculty") {
-    return (
-      <>
-        <div>Welcome, {user?.full_name}! You are a faculty member.</div>
-        <div className="timeTabel">
-          <div className="">Time Table</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Monday</th>
-                <th>Tuesday</th>
-                <th>Wednesday</th>
-                <th>Thursday</th>
-                <th>Friday</th>
-                <th>Saturday</th>
-                <th>Sunday</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </>
-    );
-  } else if (user?.role === "student") {
-    return <div>Welcome, {user?.full_name}! You are a student.</div>;
-  } else if (user?.role === "hod") {
-    return <div>Welcome, {user?.full_name}! You are a head of department.</div>;
-  } else if (user?.role === "admin") {
-    return <div>Welcome, {user?.full_name}! You are an administrator.</div>;
-  } else {
-    return <div>Welcome, {user?.full_name}! Your role is not recognized.</div>;
-  }
+  const renderRoleMessage = () => {
+    if (user?.role === "faculty") {
+      return "You are logged in as a faculty member.";
+    } else if (user?.role === "student") {
+      return "You are logged in as a student.";
+    } else if (user?.role === "hod") {
+      return "You are logged in as head of department.";
+    } else if (user?.role === "admin") {
+      return "You are logged in as an administrator.";
+    } else {
+      return "Your account role is currently unrecognized or unassigned.";
+    }
+  };
+
+  return (
+    <div className="p-6 md:p-10 max-w-4xl mx-auto flex items-center justify-center min-h-[50vh]">
+      <div className="w-full bg-white border border-gray-200 rounded-xl p-8 shadow-sm text-center space-y-3">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+          Welcome, <span className="text-blue-600">{user?.full_name || "User"}</span>!
+        </h1>
+        <p className="text-sm md:text-base font-medium text-gray-600">
+          {renderRoleMessage()}
+        </p>
+      </div>
+    </div>
+  );
 };
 
 export default home;

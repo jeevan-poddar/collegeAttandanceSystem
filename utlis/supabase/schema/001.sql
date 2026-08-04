@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   id uuid PRIMARY KEY,
   full_name text,
   email text NOT NULL UNIQUE,
-  role text NOT NULL DEFAULT 'student',
+  role text NOT NULL DEFAULT 'unknown',
   created_at timestamptz NOT NULL DEFAULT timezone('utc'::text, now())
 );
 

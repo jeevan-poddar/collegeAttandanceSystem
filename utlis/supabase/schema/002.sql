@@ -21,6 +21,7 @@ create table batches(
     branch varchar not null,
     course varchar not null,
     room_no varchar not null,
+    status batch_status not null,
     created_at timestamp default current_timestamp
 );
 
@@ -36,7 +37,6 @@ create table student_batches(
     id serial primary key,
     student_id integer not null references students(id) on delete cascade,
     batch_id integer not null references batches(id) on delete cascade,
-    status batch_status not null,
     created_at timestamp default current_timestamp
 );
 
@@ -70,7 +70,7 @@ create table subjects(
 -- CREATE TYPE enrollment_status AS ENUM ('active', 'completed');
 
 CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'cancelled', 'holiday');
-CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'late');
+CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'outside');
 
 -- 2. Faculty Allocations Table
 -- Maps which faculty teaches which subject to which batch (The official assignment)
@@ -94,7 +94,7 @@ CREATE TABLE timetable_master (
     day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 1 AND 7), -- 1 = Monday, 7 = Sunday
     period_number INTEGER NOT NULL, -- e.g., 1, 2, 3, 4, 5
     room_no VARCHAR,
-    created_at TIMESTAMP DEFAULT current_timestamp
+    created_at TIMESTAMP DEFAULT current_timestamp,
 );
 // set id of timetabelmaster to 1
 ALTER SEQUENCE timetable_master_id_seq RESTART WITH 1;
@@ -158,18 +158,15 @@ DECLARE
     current_dow INTEGER;
 BEGIN
     current_date_val := start_date;
-    
-    -- Loop through every single day in the date range provided
+
     WHILE current_date_val <= end_date LOOP
-        -- Get the Day of the Week (ISODOW: 1=Monday ... 7=Sunday)
         current_dow := EXTRACT(ISODOW FROM current_date_val);
 
-        -- Insert a session for every matching timetable rule for this day of the week
         INSERT INTO class_sessions (
             timetable_master_id,
             batch_id,
             subject_id,
-            actual_faculty_id, -- Defaults to the regular faculty
+            actual_faculty_id,
             session_date,
             status,
             is_proxy,
@@ -182,18 +179,20 @@ BEGIN
             tm.faculty_id,
             current_date_val,
             'scheduled'::session_status,
-            FALSE, -- Not a proxy by default
-            FALSE  -- Not an extra class by default
+            FALSE,
+            FALSE
         FROM timetable_master tm
+        INNER JOIN batches b
+            ON b.id = tm.batch_id
         WHERE tm.day_of_week = current_dow
-        -- Ensure we don't accidentally create duplicates if the function is run twice!
-        AND NOT EXISTS (
-            SELECT 1 FROM class_sessions cs
-            WHERE cs.timetable_master_id = tm.id
-            AND cs.session_date = current_date_val
-        );
+          AND b.status = 'active'      -- Only active batches
+          AND NOT EXISTS (
+              SELECT 1
+              FROM class_sessions cs
+              WHERE cs.timetable_master_id = tm.id
+                AND cs.session_date = current_date_val
+          );
 
-        -- Move to the next day
         current_date_val := current_date_val + 1;
     END LOOP;
 END;
@@ -201,3 +200,17 @@ $$ LANGUAGE plpgsql;
 
 -- Example of how to call it from your Supabase SQL Editor to generate next week:
 -- SELECT generate_weekly_sessions('2026-08-03', '2026-08-09')
+
+
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+SELECT cron.schedule(
+  'generate-weekly-sessions-job', -- A unique name for your cron job
+  '0 0 * * 0',                    -- Cron expression: Every Sunday at 00:00 (Midnight)
+  $$ 
+    -- The SQL query to run dynamically calculates the next 7 days
+    SELECT generate_weekly_sessions(
+      CURRENT_DATE, 
+      CURRENT_DATE + integer '6'
+    ); 
+  $$
+);

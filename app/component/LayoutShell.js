@@ -11,11 +11,13 @@ export default function LayoutShell({ children }) {
   const showSideBar = !authRoutes.includes(pathname);
 
   return (
-    <div className="flex min-h-full w-full h-full">
+    <div className="flex min-h-screen w-full bg-gray-50">
       {showSideBar ? <SideBar /> : null}
-      <main className="flex flex-col w-full h-full">
+      <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         {showSideBar ? <Navbar /> : null}
-        {children}
+        <div className="flex-1">
+          {children}
+        </div>
       </main>
     </div>
   );

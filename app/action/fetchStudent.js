@@ -7,9 +7,9 @@ export async function fetchStudent(batchId) {
     const supabase = await createClient();
     const { data: enrollment, error: enrollmentError } = await supabase
       .from("student_batches")
-      .select("students(id, name, c_roll_number)")
-      .eq("batch_id", batchId)
-      .eq("status", "active"); // Filter for active students
+      .select("students(id, name, c_roll_number, u_roll_number)")
+      .eq("batch_id", batchId);
+      // .eq("status", "active");
 
     if (enrollmentError) {
       console.error("Error fetching students:", enrollmentError);
@@ -21,7 +21,8 @@ export async function fetchStudent(batchId) {
     // 3. Format the data perfectly for your frontend
     const formattedStudents = enrollment.map((record) => ({
       id: record.students.id,
-      rollNo: record.students.c_roll_number,
+      c_roll_number: record.students.c_roll_number,
+      u_roll_number: record.students.u_roll_number,
       name: record.students.name,
     }));
 

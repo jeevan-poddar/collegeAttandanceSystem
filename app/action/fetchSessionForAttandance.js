@@ -10,7 +10,8 @@ export async function fetchSessionForAttandance(batchId, subjectId) {
       .from("class_sessions")
       .select("id, session_date")
       .eq("batch_id", batchId)
-      .eq("subject_id", subjectId);
+      .eq("subject_id", subjectId)
+      .order("session_date", { ascending: true });
     sessions.sort(
       (a, b) => new Date(a.session_date) - new Date(b.session_date),
     );

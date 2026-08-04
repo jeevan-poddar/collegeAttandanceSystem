@@ -3,14 +3,49 @@ import { fetchAttandanceForOverall } from "@/app/action/fetchAttandanceForOveral
 import { fetchBatches } from "@/app/action/fetchBatches";
 import { fetchSessionForAttandance } from "@/app/action/fetchSessionForAttandance";
 import { fetchStudent } from "@/app/action/fetchStudent";
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const page = () => {
   const [myBatches, setMyBatches] = useState([]);
   const [viewAttandance, setViewAttandance] = useState(false);
   const [sessionDetails, setSessionDetails] = useState([]);
+  const [sessionDateFrom, setSessionDateFrom] = useState("");
+  const [sessionDateTo, setSessionDateTo] = useState("");
   const [students, setStudents] = useState([]);
   const [attandance, setAttandance] = useState([]);
+
+  function formatSessionDate(sessionDate) {
+    const formattedDate = new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+    }).format(new Date(sessionDate));
+
+    return formattedDate.replace(" ", "-");
+  }
+
+  function toDateInputValue(sessionDate) {
+    const date = new Date(sessionDate);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function getTodayDateInputValue() {
+    return toDateInputValue(new Date());
+  }
+
+  const filteredSessionDetails = sessionDetails.filter((session) => {
+    if (!session.session_date) return false;
+
+    const currentDate = toDateInputValue(session.session_date);
+    const matchesFrom = !sessionDateFrom || currentDate >= sessionDateFrom;
+    const matchesTo = !sessionDateTo || currentDate <= sessionDateTo;
+
+    return matchesFrom && matchesTo;
+  });
+
   async function fetchSessions(batchId, subjectId) {
     try {
       const data = await fetchSessionForAttandance(batchId, subjectId);
@@ -41,130 +76,255 @@ const page = () => {
     fetchBatchesFrontend();
   }, []);
   return (
-    <>
-      <div>
-        <h1>My Batches</h1>
-        {myBatches.map((batch) => (
-          <div
-            key={batch.id}
-            onClick={async () => {
-              const sessionResponse = await fetchSessions(
-                batch.batch_id,
-                batch.subject_id,
-              );
-              const studentResponse = await fetchStudent(batch.batch_id);
-              setStudents(studentResponse?.success ? studentResponse.data : []);
-
-              const sessionIds = sessionResponse?.success
-                ? sessionResponse.data.map((session) => session.id)
-                : [];
-              const studentIds = studentResponse?.success
-                ? studentResponse.data.map((student) => student.id)
-                : [];
-
-              const attandanceData = await fetchAttandanceForOverall(
-                batch.batch_id,
-                sessionIds,
-                studentIds,
-              );
-              if (attandanceData.success) {
-                setAttandance(attandanceData.data);
-                setViewAttandance(true);
-              }
-            }}
-            className="border-2 "
-          >
-            <h2>{batch.batch_code}</h2>
-            <p>
-              {batch.subject_name} ({batch.batch_id}, {batch.subject_id})
-            </p>
-          </div>
-        ))}
+    <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen bg-gray-50 space-y-6">
+      <div className="border-b border-gray-200 pb-4">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+          My Batches
+        </h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Select a batch below to view comprehensive attendance records
+        </p>
       </div>
+
+      {myBatches.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {myBatches.map((batch) => (
+            <div
+              key={batch.id}
+              onClick={async () => {
+                const sessionResponse = await fetchSessions(
+                  batch.batch_id,
+                  batch.subject_id,
+                );
+                const studentResponse = await fetchStudent(batch.batch_id);
+                const sortedStudents = studentResponse?.success
+                  ? [...studentResponse.data].sort((left, right) => {
+                      const leftValue = Number(left.c_roll_number);
+                      const rightValue = Number(right.c_roll_number);
+
+                      if (
+                        !Number.isNaN(leftValue) &&
+                        !Number.isNaN(rightValue)
+                      ) {
+                        return leftValue - rightValue;
+                      }
+
+                      return String(left.c_roll_number).localeCompare(
+                        String(right.c_roll_number),
+                        undefined,
+                        { numeric: true, sensitivity: "base" },
+                      );
+                    })
+                  : [];
+
+                setStudents(sortedStudents);
+
+                const sessionIds = sessionResponse?.success
+                  ? sessionResponse.data.map((session) => session.id)
+                  : [];
+                const studentIds = studentResponse?.success
+                  ? studentResponse.data.map((student) => student.id)
+                  : [];
+
+                const attandanceData = await fetchAttandanceForOverall(
+                  batch.batch_id,
+                  sessionIds,
+                  studentIds,
+                );
+                if (attandanceData.success) {
+                  setAttandance(attandanceData.data);
+                  setSessionDateFrom(
+                    sessionResponse?.success && sessionResponse.data.length > 0
+                      ? toDateInputValue(sessionResponse.data[0].session_date)
+                      : "",
+                  );
+                  setSessionDateTo(getTodayDateInputValue());
+                  setViewAttandance(true);
+                }
+              }}
+              className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all flex flex-col justify-between space-y-4 group"
+            >
+              <div>
+                <span className="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 font-bold text-xs rounded-full mb-3 border border-blue-100 group-hover:bg-blue-100/80 transition-colors">
+                  Batch Code: {batch.batch_code}
+                </span>
+                <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors leading-snug">
+                  {batch.subject_name}
+                </h2>
+              </div>
+              {/* <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-medium text-gray-500">
+                <span>ID: {batch.batch_id}</span>
+                <span>Sub: {batch.subject_id}</span>
+              </div> */}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center text-gray-500 text-sm">
+          No assigned batches found.
+        </div>
+      )}
+
       {viewAttandance && (
-        <div className="fixed inset-0 bg-black/40 flex justify-end z-50">
-          <div className="w-full bg-white h-full shadow-2xl flex flex-col">
-            <div className=" flex justify-between items-center p-4 border-b-2">
-              <h1>Attendance Details</h1>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="w-full max-w-6xl bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh] border border-gray-200 overflow-hidden">
+            <div className="flex justify-between items-center p-5 border-b border-gray-200 bg-gray-50/50">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Attendance Register Overview
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Comprehensive grid of student attendance across all recorded
+                  sessions
+                </p>
+              </div>
               <button
                 onClick={() => setViewAttandance(false)}
-                className="bg-blue-500 text-white px-4 py-2 rounded"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg text-sm transition shadow-xs"
               >
                 Close
               </button>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <td>Roll No.</td>
-                  <td>Student Name</td>
-                  {sessionDetails.map((session, index) => (
-                    <td key={index}>{index + 1}</td>
-                  ))}
-                  <td>Total</td>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((student, index) => (
-                  <tr key={index}>
-                    <td>{student.rollNo}</td>
-                    <td>{student.name}</td>
-                    {sessionDetails.map((session, sessionIndex) => {
-                      const attendanceRecord = attandance.find(
-                        (record) =>
-                          record.class_session_id === session.id &&
-                          record.student_id === student.id,
-                      );
-                      const status = attendanceRecord
-                        ? attendanceRecord.status
-                        : "N/A";
-                      return (
-                        <td key={sessionIndex}>
-                          {
-                            <button
-                              className={`px-3 py-1 rounded font-bold transition ${
-                                status === "present"
-                                  ? "bg-green-500 text-white"
-                                  : status === "absent"
-                                    ? "bg-red-500 text-white"
-                                    : status === "late"
-                                      ? "bg-yellow-500 text-white"
-                                      : "bg-gray-300 text-black"
-                              }`}
+
+            <div className="flex-1 overflow-auto p-6">
+              <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3 md:items-end">
+                <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                  <span>Session date from</span>
+                  <input
+                    type="date"
+                    value={sessionDateFrom}
+                    onChange={(e) => setSessionDateFrom(e.target.value)}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  />
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                  <span>Session date to</span>
+                  <input
+                    type="date"
+                    value={sessionDateTo}
+                    onChange={(e) => setSessionDateTo(e.target.value)}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  />
+                </label>
+                <div className="flex gap-3 md:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSessionDateFrom("");
+                      setSessionDateTo("");
+                    }}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                  >
+                    Clear Filter
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <table className="w-full text-left border-collapse min-w-150">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="py-3 px-4 border-r border-gray-200 whitespace-nowrap w-24">
+                        C Roll No.
+                      </th>
+                      <th className="py-3 px-4 border-r border-gray-200 whitespace-nowrap w-24">
+                        U Roll No.
+                      </th>
+                      <th className="py-3 px-4 border-r border-gray-200 whitespace-nowrap min-w-45">
+                        Student Name
+                      </th>
+                      {filteredSessionDetails.map((session, index) => (
+                        <th
+                          key={index}
+                          title={formatSessionDate(session.session_date)}
+                          className="py-3 px-3 text-center border-r border-gray-200 whitespace-nowrap w-12 cursor-help"
+                        >
+                          {index + 1}
+                        </th>
+                      ))}
+                      <th className="py-3 px-4 text-center whitespace-nowrap w-24 font-bold text-gray-800">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {students.map((student, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-gray-50/50 transition-colors text-sm"
+                      >
+                        <td className="py-3 px-4 font-medium text-gray-500 border-r border-gray-200 whitespace-nowrap">
+                          {student.c_roll_number}
+                        </td>
+                        <td className="py-3 px-4 font-medium text-gray-500 border-r border-gray-200 whitespace-nowrap">
+                          {student.u_roll_number}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-gray-900 border-r border-gray-200 whitespace-nowrap">
+                          {student.name}
+                        </td>
+                        {filteredSessionDetails.map((session, sessionIndex) => {
+                          const attendanceRecord = attandance.find(
+                            (record) =>
+                              record.class_session_id === session.id &&
+                              record.student_id === student.id,
+                          );
+                          const status = attendanceRecord
+                            ? attendanceRecord.status
+                            : "N/A";
+                          return (
+                            <td
+                              key={sessionIndex}
+                              className="py-2 px-2 text-center border-r border-gray-200"
                             >
-                              {status === "present"
-                                ? "P"
-                                : status === "absent"
-                                  ? "A"
-                                  : status === "late"
-                                    ? "L"
-                                    : "N/A"}
-                            </button>
-                          }
-                        </td>
-                      );
-                    })}
-                    {(() => {
-                      const totalPresent = attandance.filter(
-                        (record) =>
-                          record.student_id === student.id &&
-                          (record.status === "present" || record.status === "late"),
-                      ).length;
-                      const totalSessions = sessionDetails.length;
-                      return (
-                        <td>
-                          {totalPresent}/{totalSessions}
-                        </td>
-                      );
-                    })()}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                              <span
+                                className={`inline-flex w-7 h-7 items-center justify-center rounded font-bold text-xs shadow-xs ${
+                                  status === "present"
+                                    ? "bg-green-500 text-white"
+                                    : status === "absent"
+                                      ? "bg-red-500 text-white"
+                                      : status === "outside"
+                                        ? "bg-yellow-500 text-white"
+                                        : "bg-gray-100 text-gray-400 border border-gray-200"
+                                }`}
+                              >
+                                {status === "present"
+                                  ? "P"
+                                  : status === "absent"
+                                    ? "A"
+                                    : status === "outside"
+                                      ? "O"
+                                      : "—"}
+                              </span>
+                            </td>
+                          );
+                        })}
+                        {(() => {
+                          const totalPresent = attandance.filter(
+                            (record) =>
+                              record.student_id === student.id &&
+                              filteredSessionDetails.some(
+                                (session) =>
+                                  session.id === record.class_session_id,
+                              ) &&
+                              (record.status === "present" ||
+                                record.status === "outside"),
+                          ).length;
+                          const totalSessions = filteredSessionDetails.length;
+                          return (
+                            <td className="py-3 px-4 text-center font-bold text-gray-900 bg-gray-50/50">
+                              {totalPresent} / {totalSessions}
+                            </td>
+                          );
+                        })()}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

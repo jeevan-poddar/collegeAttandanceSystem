@@ -1,21 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 const SearchAbleDropdown = ({
   options = [],
   index,
-  searchFor,
-  insert,
+  searchFor = [],
+  insert = {},
   defaultValue,
   updateRow,
   mode, // accepts: "option", "custom", or "both"
   placeholder,
 }) => {
   const [showDrop, setShowDrop] = useState(false);
+  const containerRef = useRef(null);
 
   const { register, watch, setValue } = useForm({
-    defaultValues: { search: defaultValue },
+    defaultValues: { search: defaultValue || "" },
   });
+
+  useEffect(() => {
+    setValue("search", defaultValue || "");
+  }, [defaultValue, setValue]);
+
+  // Listen for clicks outside the dropdown container to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
+        setShowDrop(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const filteredOptions = options.filter((item) => {
     const inputValue = watch("search")?.toLowerCase() || "";
@@ -28,26 +47,30 @@ const SearchAbleDropdown = ({
 
   const handleSelectOption = (option) => {
     setShowDrop(false);
-    setValue("search", option[searchFor[0]]);
-    updateRow(index, Object.keys(insert)[0], option[Object.values(insert)[0]]);
+    setValue("search", option[searchFor[0]] || "");
+    const insertKey = Object.keys(insert)[0];
+    const insertValueField = Object.values(insert)[0];
+    updateRow(index, insertKey, option[insertValueField]);
   };
 
   const handleInputChange = (e) => {
-    // 👇 UPDATED LINE: Update parent row on typing ONLY if mode is "custom" or "both"
     if (mode === "custom" || mode === "both") {
-      updateRow(index, Object.keys(insert)[0], e.target.value);
+      const insertKey = Object.keys(insert)[0];
+      updateRow(index, insertKey, e.target.value);
+    }
+    if (mode === "option" || mode === "both") {
+      setShowDrop(true);
     }
   };
 
   return (
-    <div>
+    <div className="relative w-full" ref={containerRef}>
       <form action="" onSubmit={(e) => e.preventDefault()}>
         <input
           type="text"
           placeholder={placeholder || "Search..."}
-          className="border border-gray-300 p-2 w-full"
+          className="border border-gray-300 rounded-lg px-3.5 py-2 w-full text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-xs"
           autoComplete="off"
-          // 👇 UPDATED LINE: Only open the dropdown menu if mode is "option" or "both"
           onFocus={() => {
             if (mode === "option" || mode === "both") {
               setShowDrop(true);
@@ -55,26 +78,31 @@ const SearchAbleDropdown = ({
           }}
           {...register("search", {
             onChange: handleInputChange,
-            onBlur: () => setShowDrop(false),
           })}
         />
       </form>
-      <div className="dropDownMenu">
-        {showDrop && (
-          <div>
-            {filteredOptions.map((option, idx) => (
+      {showDrop && (
+        <div className="absolute z-50 left-0 min-w-60 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-xl divide-y divide-gray-100">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option, idx) => (
               <div
                 key={idx}
-                className="dropDownItem"
-                onMouseDown={(e) => e.preventDefault()}
+                className="px-3.5 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer transition-colors select-none"
                 onClick={() => handleSelectOption(option)}
               >
-                {searchFor.map((title) => option[title]).join(", ")}
+                {searchFor
+                  .map((title) => option[title])
+                  .filter(Boolean)
+                  .join(", ")}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            ))
+          ) : (
+            <div className="px-3.5 py-3 text-xs text-gray-400 italic text-center select-none">
+              No matching options found
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
