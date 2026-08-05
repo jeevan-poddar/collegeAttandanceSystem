@@ -37,7 +37,9 @@ create table student_batches(
     id serial primary key,
     student_id integer not null references students(id) on delete cascade,
     batch_id integer not null references batches(id) on delete cascade,
-    created_at timestamp default current_timestamp
+    created_at timestamp default current_timestamp,
+    UNIQUE(student_id, batch_id) 
+
 );
 
 

@@ -8,9 +8,9 @@ const page = () => {
     <div className="p-6 md:p-10 max-w-6xl mx-auto space-y-6 min-h-screen bg-gray-50">
       <div className="border-b border-gray-200 pb-4">
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Admin Dashboard</h1>
-        <p className="text-sm text-gray-600 mt-1">Manage academic metadata, subjects, semester batches, and enrollments</p>
+        <p className="text-sm text-gray-600 mt-1">Manage academic metadata, subjects, semester batches, and student enrollments</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Link
           href="/dashboard/admin/addSubject"
           className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
@@ -26,11 +26,11 @@ const page = () => {
           <p className="text-xs text-gray-500 leading-relaxed">Create and manage class batches, session years, semesters, and room allocations.</p>
         </Link>
         <Link
-          href="/dashboard/admin/assignStudents"
+          href="/dashboard/admin/manageBatches"
           className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
         >
-          <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Assign Students</h2>
-          <p className="text-xs text-gray-500 leading-relaxed">Search and enroll students into academic batches for a specific session year.</p>
+          <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Manage Batches & Students</h2>
+          <p className="text-xs text-gray-500 leading-relaxed">Review existing batches, dynamically filter by session year, manage student batch enrollments, and update batch attributes or operational status.</p>
         </Link>
       </div>
     </div>

@@ -7,7 +7,7 @@ export async function fetchStudent(batchId) {
     const supabase = await createClient();
     const { data: enrollment, error: enrollmentError } = await supabase
       .from("student_batches")
-      .select("students(id, name, c_roll_number, u_roll_number)")
+      .select("students(id, name, c_roll_number, u_roll_number, phone, email, parent_name)")
       .eq("batch_id", batchId);
       // .eq("status", "active");
 
@@ -24,6 +24,9 @@ export async function fetchStudent(batchId) {
       c_roll_number: record.students.c_roll_number,
       u_roll_number: record.students.u_roll_number,
       name: record.students.name,
+      phone: record.students.phone,
+      email: record.students.email,
+      parent_name: record.students.parent_name,
     }));
 
     return {
