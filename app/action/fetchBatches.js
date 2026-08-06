@@ -35,6 +35,7 @@ export async function fetchBatches() {
       .select(
         `
         id,
+        batch_group,
         batches ( id, batch_code, semester, branch, course,status ),
         subjects ( id, subject_name, subject_code )
       `,
@@ -49,6 +50,7 @@ export async function fetchBatches() {
         id: record.id,
         batch_id: record.batches.id,
         batch_code: record.batches.batch_code,
+        batch_group: record.batch_group || null,
         semester: record.batches.semester,
         course: record.batches.course,
         subject_id: record.subjects.id,

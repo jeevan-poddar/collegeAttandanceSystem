@@ -81,13 +81,13 @@ const Page = () => {
     }
 
     const combos = dataToInsert.map(
-      (item) => `${item.faculty_id}_${item.batch_id}_${item.subject_id}`,
+      (item) => `${item.faculty_id}_${item.batch_id}_${item.subject_id}_${item.batch_group || 'all'}`,
     );
     if (new Set(combos).size !== combos.length) {
       setNotification({
         type: "error",
         message:
-          "Duplicate entries detected: Multiple rows have the exact same Faculty, Batch, and Subject combination. Please remove duplicate entries.",
+          "Duplicate entries detected: Multiple rows have the exact same Faculty, Batch, Subject, and Group combination. Please remove duplicate entries.",
       });
       return;
     }
@@ -261,22 +261,25 @@ const Page = () => {
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                <th className="py-3 px-4 border-r border-gray-200 w-1/3">
+                <th className="py-3 px-4 border-r border-gray-200 w-1/4">
                   Faculty Name
                 </th>
-                <th className="py-3 px-4 border-r border-gray-200 w-1/3">
+                <th className="py-3 px-4 border-r border-gray-200 w-1/4">
                   Batch Code
                 </th>
-                <th className="py-3 px-4 w-1/3 border-r border-gray-200">
+                <th className="py-3 px-4 w-1/4 border-r border-gray-200">
                   Subject Code
                 </th>
-                <th className="py-3 px-4 w-1/3">Actions</th>
+                <th className="py-3 px-3 w-28 border-r border-gray-200">
+                  Group
+                </th>
+                <th className="py-3 px-4 w-20 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-16 text-center">
+                  <td colSpan={5} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center space-y-3">
                       <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                       <p className="text-sm text-gray-500 font-medium">
@@ -335,6 +338,19 @@ const Page = () => {
                         placeholder="Select Subject"
                       />
                     </td>
+                    <td className="p-2.5 border-r border-gray-200 align-top">
+                      <select
+                        value={row.batch_group || ""}
+                        onChange={(e) => updateRow(index, "batch_group", e.target.value)}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition font-medium text-gray-700"
+                      >
+                        <option value="">All / General</option>
+                        <option value="G1">G1</option>
+                        <option value="G2">G2</option>
+                        <option value="G3">G3</option>
+                        <option value="G4">G4</option>
+                      </select>
+                    </td>
                     <td className="p-2.5 text-center align-middle ">
                       <button
                         onClick={() => removeRow(index)}
@@ -349,7 +365,7 @@ const Page = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="py-12 text-center text-sm text-gray-400 font-medium"
                   >
                     No allocation rows added yet. Click &ldquo;+ Add Row&rdquo;

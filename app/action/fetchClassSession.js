@@ -56,9 +56,10 @@ export async function fetchClassSession() {
       status,
       is_proxy,
       actual_faculty_id,
+      batch_group,
       batches ( id, batch_code, semester, branch, course ),
       subjects ( subject_name ),
-      timetable_master!inner ( period_number, room_no, faculty_id )
+      timetable_master!inner ( period_number, room_no, faculty_id, batch_group )
     `,
       )
       .gte("session_date", startDate.toISOString()) // Good practice to format dates to ISO
@@ -83,6 +84,7 @@ export async function fetchClassSession() {
         subject: session.subjects.subject_name,
         batchId: session.batches.id,
         batch_code: session.batches.batch_code,
+        batch_group: session.batch_group || session.timetable_master?.batch_group || null,
         sem: session.batches.semester,
         room: session.timetable_master.room_no,
         branch: session.batches.branch,

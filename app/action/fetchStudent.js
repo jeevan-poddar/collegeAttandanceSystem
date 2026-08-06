@@ -2,12 +2,12 @@
 
 import { createClient } from "@/utlis/supabase/server";
 
-export async function fetchStudent(batchId) {
+export async function fetchStudent(batchId, batchGroup = null) {
   try {
     const supabase = await createClient();
     const { data: enrollment, error: enrollmentError } = await supabase
       .from("student_batches")
-      .select("students(id, name, c_roll_number, u_roll_number, phone, email, parent_name)")
+      .select("batch_group, students(id, name, c_roll_number, u_roll_number, phone, email, parent_name)")
       .eq("batch_id", batchId);
       // .eq("status", "active");
 
@@ -19,7 +19,7 @@ export async function fetchStudent(batchId) {
       };
     }
     // 3. Format the data perfectly for your frontend
-    const formattedStudents = enrollment.map((record) => ({
+    let formattedStudents = enrollment.map((record) => ({
       id: record.students.id,
       c_roll_number: record.students.c_roll_number,
       u_roll_number: record.students.u_roll_number,
@@ -27,7 +27,15 @@ export async function fetchStudent(batchId) {
       phone: record.students.phone,
       email: record.students.email,
       parent_name: record.students.parent_name,
+      batch_group: record.batch_group || null,
     }));
+
+    if (batchGroup && batchGroup !== "ALL" && batchGroup !== "All" && batchGroup !== "") {
+      formattedStudents = formattedStudents.filter((stu) => {
+        const g = stu.batch_group;
+        return !g || g === "ALL" || g === "All" || g === "" || g === batchGroup;
+      });
+    }
 
     return {
       success: true,

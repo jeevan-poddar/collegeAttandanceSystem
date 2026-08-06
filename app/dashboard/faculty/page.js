@@ -288,6 +288,7 @@ const FacultyDashboardPage = () => {
                                 try {
                                   const studentData = await fetchStudent(
                                     session.batchId,
+                                    session.batch_group,
                                   );
                                   const sortedStudents = studentData?.success
                                     ? [...studentData.data].sort(
@@ -420,6 +421,10 @@ const FacultyDashboardPage = () => {
                   Batch:{" "}
                   <span className="font-semibold text-white">
                     {activeClass.batch_code}
+                  </span>{" "}
+                  | Group:{" "}
+                  <span className="font-semibold text-white bg-blue-700/80 px-1.5 py-0.5 rounded border border-blue-400/30">
+                    {activeClass.batch_group || "All"}
                   </span>{" "}
                   | Room:{" "}
                   <span className="font-semibold text-white">

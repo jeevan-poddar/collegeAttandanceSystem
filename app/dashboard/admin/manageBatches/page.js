@@ -392,6 +392,7 @@ const ManageBatchesPage = () => {
       const payload = dataToInsert.map((item) => ({
         student_id: item.student_id,
         batch_id: selectedBatchForStudents.id,
+        batch_group: item.batch_group || null,
       }));
 
       const result = await submitStudentBatches(payload);
@@ -1035,6 +1036,9 @@ const ManageBatchesPage = () => {
                               Student Name
                             </th>
                             <th className="py-3 px-3.5 border-r border-gray-200 w-1/8">
+                              Group
+                            </th>
+                            <th className="py-3 px-3.5 border-r border-gray-200 w-1/8">
                               College Roll No
                             </th>
                             <th className="py-3 px-3.5 border-r border-gray-200 w-1/8">
@@ -1058,7 +1062,7 @@ const ManageBatchesPage = () => {
                           {studentsLoading ? (
                             <tr>
                               <td
-                                colSpan={7}
+                                colSpan={8}
                                 className="py-16 text-center text-gray-500"
                               >
                                 <div className="flex flex-col items-center justify-center gap-3">
@@ -1092,6 +1096,11 @@ const ManageBatchesPage = () => {
                                         {/* <div className="text-xs font-normal text-gray-500">ID: #{student.id}</div> */}
                                       </div>
                                     </div>
+                                  </td>
+                                  <td className="p-3.5 border-r border-gray-200 text-center align-middle">
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                      {student.batch_group || "All"}
+                                    </span>
                                   </td>
                                   <td className="p-3.5 border-r border-gray-200 text-gray-700 font-medium align-middle">
                                     <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs font-mono">
@@ -1136,7 +1145,7 @@ const ManageBatchesPage = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan={7}
+                                colSpan={8}
                                 className="py-16 text-center text-gray-500"
                               >
                                 <div className="flex flex-col items-center justify-center gap-3">
@@ -1230,6 +1239,9 @@ const ManageBatchesPage = () => {
                           <th className="py-3 px-3.5 border-r border-gray-200 w-1/4">
                             Search & Select Student
                           </th>
+                          <th className="py-3 px-3 border-r border-gray-200 w-28">
+                            Assign Group
+                          </th>
                           <th className="py-3 px-3 border-r border-gray-200 w-1/8">
                             College Roll No
                           </th>
@@ -1274,6 +1286,21 @@ const ManageBatchesPage = () => {
                                   placeholder="Type Name, Roll No, Phone..."
                                 />
                               </td>
+                              <td className="p-2.5 border-r border-gray-200 align-top">
+                                <select
+                                  value={row.batch_group || ""}
+                                  onChange={(e) =>
+                                    updateStudentRow(index, "batch_group", e.target.value)
+                                  }
+                                  className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition font-medium text-gray-700"
+                                >
+                                  <option value="">All / General</option>
+                                  <option value="G1">G1</option>
+                                  <option value="G2">G2</option>
+                                  <option value="G3">G3</option>
+                                  <option value="G4">G4</option>
+                                </select>
+                              </td>
                               <td className="p-3 border-r border-gray-200 text-gray-700 font-medium align-middle">
                                 <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs font-mono">
                                   {row.c_roll_number || "—"}
@@ -1307,7 +1334,7 @@ const ManageBatchesPage = () => {
                         ) : (
                           <tr>
                             <td
-                              colSpan={7}
+                              colSpan={8}
                               className="py-16 text-center text-gray-400 font-medium"
                             >
                               <div className="flex flex-col items-center justify-center gap-3">

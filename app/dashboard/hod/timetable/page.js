@@ -111,7 +111,7 @@ const TimetablePage = () => {
       return;
     }
 
-    const batchTimeSet = new Set();
+    const batchTimeMap = new Map();
     const facultyTimeSet = new Set();
     const roomTimeSet = new Set();
 
@@ -120,14 +120,21 @@ const TimetablePage = () => {
       const batchKey = `${row.batch_id}_${dayPeriod}`;
       const facultyKey = `${row.faculty_id}_${dayPeriod}`;
       const roomKey = `${row.room_no.toString().trim().toLowerCase()}_${dayPeriod}`;
+      const currentGroup = row.batch_group || "ALL";
 
-      if (batchTimeSet.has(batchKey)) {
-        setNotification({
-          type: "error",
-          message:
-            "Schedule clash detected: The same Batch is assigned to multiple subjects on the same Day and Period. Please resolve the schedule conflict.",
-        });
-        return;
+      if (batchTimeMap.has(batchKey)) {
+        const existingGroups = batchTimeMap.get(batchKey);
+        const hasAll = existingGroups.includes("ALL") || currentGroup === "ALL";
+        const hasDuplicateGroup = existingGroups.includes(currentGroup);
+
+        if (hasAll || hasDuplicateGroup) {
+          setNotification({
+            type: "error",
+            message:
+              "Schedule clash detected: The same Batch (or Group) is assigned to multiple subjects on the same Day and Period. Please resolve the schedule conflict.",
+          });
+          return;
+        }
       }
       if (facultyTimeSet.has(facultyKey)) {
         setNotification({
@@ -146,7 +153,10 @@ const TimetablePage = () => {
         return;
       }
 
-      batchTimeSet.add(batchKey);
+      if (!batchTimeMap.has(batchKey)) {
+        batchTimeMap.set(batchKey, []);
+      }
+      batchTimeMap.get(batchKey).push(currentGroup);
       facultyTimeSet.add(facultyKey);
       roomTimeSet.add(roomKey);
     }
@@ -336,13 +346,16 @@ const TimetablePage = () => {
                 <th className="py-3 px-3.5 w-1/6 border-r border-gray-200">
                   Room No.
                 </th>
+                <th className="py-3 px-3 w-24 border-r border-gray-200">
+                  Group
+                </th>
                 <th className="py-3 px-3.5 w-1/6">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center">
+                  <td colSpan={8} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center space-y-3">
                       <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                       <p className="text-sm text-gray-500 font-medium">
@@ -483,6 +496,19 @@ const TimetablePage = () => {
                         placeholder="Room No."
                       />
                     </td>
+                    <td className="p-2.5 border-r border-gray-200 align-top">
+                      <select
+                        value={row.batch_group || ""}
+                        onChange={(e) => updateRow(index, "batch_group", e.target.value)}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition font-medium text-gray-700"
+                      >
+                        <option value="">All</option>
+                        <option value="G1">G1</option>
+                        <option value="G2">G2</option>
+                        <option value="G3">G3</option>
+                        <option value="G4">G4</option>
+                      </select>
+                    </td>
                     <td className="p-2.5 text-center align-middle">
                       <button
                         onClick={() => duplicateRow(index)}
@@ -504,7 +530,7 @@ const TimetablePage = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="py-12 text-center text-sm text-gray-400 font-medium"
                   >
                     No timetable slots added yet. Click &ldquo;+ Add Row&rdquo;

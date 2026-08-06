@@ -15,6 +15,7 @@ export async function submitTimeTable(data) {
     day_of_week: parseInt(item.day_of_week, 10) || 1,
     period_number: parseInt(item.period_number, 10) || 0,
     room_no: item.room_no?.toString().trim() || "",
+    batch_group: item.batch_group || null,
   }));
   console.log("Formatted Data:", formatData);
 

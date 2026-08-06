@@ -38,6 +38,12 @@ const Cell = (props) => {
           </span>
         </div>
         <div className="flex items-center px-4 py-2.5">
+          <span className="w-24 shrink-0 text-sm font-medium text-gray-500">Group:</span>
+          <span className="text-sm font-semibold text-indigo-600 truncate">
+            {props.selectedSession?.batch_group || "All / General"}
+          </span>
+        </div>
+        <div className="flex items-center px-4 py-2.5">
           <span className="w-24 shrink-0 text-sm font-medium text-gray-500">Subject:</span>
           <span className="text-sm font-semibold text-gray-900 truncate">
             {props.selectedSession?.subject || "N/A"}
