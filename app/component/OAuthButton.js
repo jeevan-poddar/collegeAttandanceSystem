@@ -2,24 +2,14 @@
 import { createClient } from "@/utlis/supabase/client";
 import React from "react";
 
-function getAuthRedirectBaseUrl() {
-  const configuredBaseUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
-
-  if (configuredBaseUrl) {
-    return configuredBaseUrl.replace(/\/$/, "");
-  }
-
-  return window.location.origin;
-}
-
 const OAuthButton = () => {
   const supabase = createClient();
   const loginOAuth = async (provider) => {
     await supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
-        // Use a fixed public URL in production and browser origin in local/dev.
-        redirectTo: `${getAuthRedirectBaseUrl()}/api/auth/callback`,
+        // Tells Supabase exactly where to send the user after Google/GitHub validates them
+        redirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
   };
