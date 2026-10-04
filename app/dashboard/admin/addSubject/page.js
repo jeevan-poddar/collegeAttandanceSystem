@@ -1,10 +1,15 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { fetchSubject } from "@/app/action/fetchForFacultyAllocation";
-import { submitSubject } from "@/app/action/submitSubject";
-import { updateSubject, deleteSubject } from "@/app/action/updateSubject";
+import { useSelector } from "react-redux";
+import { createSubjects } from "@/app/action/subjects/subjectActions";
+import {
+  updateSubject,
+  deleteSubject,
+  getSubjects,
+} from "@/app/action/subjects/subjectActions";
 import SearchAbleDropdown from "@/app/component/SearchableDropdown";
+import { callWithRole } from "@/app/utlis/callWithRole";
 import {
   Pencil,
   Trash2,
@@ -21,6 +26,7 @@ import {
 } from "lucide-react";
 
 const AddSubjectPage = () => {
+  const role = useSelector((state) => state.user.role);
   const [activeTab, setActiveTab] = useState("add"); // 'add' or 'manage'
   const [allSubjects, setAllSubjects] = useState([]);
   const [dataToInsert, setDataToInsert] = useState([]);
@@ -50,7 +56,7 @@ const AddSubjectPage = () => {
     let isMounted = true;
     async function loadSubjects() {
       try {
-        const subjectsRes = await fetchSubject();
+        const subjectsRes = await callWithRole(role, ["admin"], getSubjects);
         if (!isMounted) return;
         if (subjectsRes && subjectsRes.data) {
           setAllSubjects(orderSubjects(subjectsRes.data, "code", "asc"));
@@ -66,13 +72,13 @@ const AddSubjectPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [orderSubjects]);
+  }, [orderSubjects, role]);
 
   const handleRefresh = async () => {
     setLoading(true);
     setNotification({ type: "", message: "" });
     try {
-      const subjectsRes = await fetchSubject();
+      const subjectsRes = await callWithRole(role, ["admin"], getSubjects);
       if (subjectsRes && subjectsRes.data) {
         setAllSubjects(orderSubjects(subjectsRes.data));
       }
@@ -157,7 +163,12 @@ const AddSubjectPage = () => {
     setIsSubmitting(true);
     setNotification({ type: "", message: "" });
     try {
-      const res = await submitSubject(dataToInsert);
+      const res = await callWithRole(
+        role,
+        ["admin"],
+        createSubjects,
+        dataToInsert,
+      );
       if (res && res.success) {
         setNotification({
           type: "success",
@@ -213,7 +224,13 @@ const AddSubjectPage = () => {
     setActionLoading(id);
     setNotification({ type: "", message: "" });
     try {
-      const res = await updateSubject(id, editForm);
+      const res = await callWithRole(
+        role,
+        ["admin"],
+        updateSubject,
+        id,
+        editForm,
+      );
       if (res.success && res.data) {
         setNotification({
           type: "success",
@@ -253,7 +270,7 @@ const AddSubjectPage = () => {
     setActionLoading(id);
     setNotification({ type: "", message: "" });
     try {
-      const res = await deleteSubject(id);
+      const res = await callWithRole(role, ["admin"], deleteSubject, id);
       if (res.success) {
         setNotification({
           type: "success",
@@ -301,7 +318,8 @@ const AddSubjectPage = () => {
             Add & Manage Subjects
           </h1>
           <p className="text-sm text-gray-600 mt-1 max-w-xl">
-            Register new subject names and codes into the academic repository, or manage, edit, and audit existing curriculum items.
+            Register new subject names and codes into the academic repository,
+            or manage, edit, and audit existing curriculum items.
           </p>
         </div>
 
@@ -373,7 +391,8 @@ const AddSubjectPage = () => {
                 Bulk Register New Subjects
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Add rows below to configure subject codes and titles, then submit to save directly to Supabase.
+                Add rows below to configure subject codes and titles, then
+                submit to save directly to Supabase.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -473,7 +492,8 @@ const AddSubjectPage = () => {
                           No subject rows queued
                         </p>
                         <p className="text-xs text-gray-400 max-w-sm">
-                          Click &ldquo;+ Add Row&rdquo; above to begin adding one or more subjects to the system.
+                          Click &ldquo;+ Add Row&rdquo; above to begin adding
+                          one or more subjects to the system.
                         </p>
                       </div>
                     </td>
@@ -495,7 +515,8 @@ const AddSubjectPage = () => {
                 Manage Existing Subjects
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Search, edit attributes inline, or delete registered courses from the database.
+                Search, edit attributes inline, or delete registered courses
+                from the database.
               </p>
             </div>
             <div className="flex items-center gap-3">

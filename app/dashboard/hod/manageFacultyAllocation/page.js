@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useSelector } from "react-redux";
 import Link from "next/link";
 import {
   fetchAllocatedFaculty,
   updateFacultyAllocation,
   deleteFacultyAllocation,
-} from "@/app/action/manageFacultyAllocation";
+} from "@/app/action/faculty/facultyAllocation";
 import {
-  fetchBatches,
-  fetchFaculty,
-  fetchSubject,
-} from "@/app/action/fetchForFacultyAllocation";
+  getBatchesForAllocation,
+  getFaculty,
+} from "@/app/action/batches/getAllocationOptions";
 import {
   Pencil,
   Trash2,
@@ -28,8 +28,11 @@ import {
   Layers,
   Calendar,
 } from "lucide-react";
+import { getSubjects } from "@/app/action/subjects/subjectActions";
+import { callWithRole } from "@/app/utlis/callWithRole";
 
 const ManageFacultyAllocationPage = () => {
+  const role = useSelector((state) => state.user.role);
   const [allocations, setAllocations] = useState([]);
   const [allFaculty, setAllFaculty] = useState([]);
   const [allBatches, setAllBatches] = useState([]);
@@ -84,10 +87,10 @@ const ManageFacultyAllocationPage = () => {
 
     try {
       const [allocRes, facRes, batchRes, subRes] = await Promise.all([
-        fetchAllocatedFaculty(),
-        fetchFaculty(),
-        fetchBatches("ALL"),
-        fetchSubject(),
+        callWithRole(role, ["hod"], fetchAllocatedFaculty),
+        callWithRole(role, ["hod"], getFaculty),
+        callWithRole(role, ["hod"], getBatchesForAllocation, "ALL"),
+        callWithRole(role, ["hod"], getSubjects),
       ]);
 
       if (facRes?.data) setAllFaculty(facRes.data);
@@ -100,7 +103,8 @@ const ManageFacultyAllocationPage = () => {
         setNotification({
           type: "error",
           message:
-            allocRes?.error || "Failed to retrieve faculty allocations from database.",
+            allocRes?.error ||
+            "Failed to retrieve faculty allocations from database.",
         });
       }
     } catch (error) {
@@ -122,7 +126,8 @@ const ManageFacultyAllocationPage = () => {
         if (isMounted) {
           setNotification({
             type: "error",
-            message: "Cannot load allocations: No internet connection detected.",
+            message:
+              "Cannot load allocations: No internet connection detected.",
           });
           setLoading(false);
         }
@@ -130,10 +135,10 @@ const ManageFacultyAllocationPage = () => {
       }
       try {
         const [allocRes, facRes, batchRes, subRes] = await Promise.all([
-          fetchAllocatedFaculty(),
-          fetchFaculty(),
-          fetchBatches("ALL"),
-          fetchSubject(),
+          callWithRole(role, ["hod"], fetchAllocatedFaculty),
+          callWithRole(role, ["hod"], getFaculty),
+          callWithRole(role, ["hod"], getBatchesForAllocation, "ALL"),
+          callWithRole(role, ["hod"], getSubjects),
         ]);
         if (!isMounted) return;
         if (facRes?.data) setAllFaculty(facRes.data);
@@ -146,7 +151,8 @@ const ManageFacultyAllocationPage = () => {
           setNotification({
             type: "error",
             message:
-              allocRes?.error || "Failed to retrieve faculty allocations from database.",
+              allocRes?.error ||
+              "Failed to retrieve faculty allocations from database.",
           });
         }
       } catch (error) {
@@ -165,7 +171,7 @@ const ManageFacultyAllocationPage = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [role]);
 
   const getFacultyName = (id) => {
     const found = allFaculty.find((f) => f.id === id || f.id === Number(id));
@@ -241,7 +247,13 @@ const ManageFacultyAllocationPage = () => {
     setNotification({ type: "", message: "" });
 
     try {
-      const res = await updateFacultyAllocation(id, editForm);
+      const res = await callWithRole(
+        role,
+        ["hod"],
+        updateFacultyAllocation,
+        id,
+        editForm,
+      );
       if (res.success && res.data) {
         setAllocations((prev) =>
           prev.map((item) => (item.id === id ? res.data : item)),
@@ -290,7 +302,12 @@ const ManageFacultyAllocationPage = () => {
     setNotification({ type: "", message: "" });
 
     try {
-      const res = await deleteFacultyAllocation(id);
+      const res = await callWithRole(
+        role,
+        ["hod"],
+        deleteFacultyAllocation,
+        id,
+      );
       if (res.success) {
         setAllocations((prev) => prev.filter((item) => item.id !== id));
         if (editingId === id) setEditingId(null);
@@ -316,9 +333,19 @@ const ManageFacultyAllocationPage = () => {
   };
 
   const filteredAllocations = allocations.filter((item) => {
-    if (sessionYearFilter.trim() && sessionYearFilter.trim().toUpperCase() !== "ALL") {
-      const batch = allBatches.find((b) => b.id === item.batch_id || b.id === Number(item.batch_id));
-      if (!batch || !(batch.session_year || "").toLowerCase().includes(sessionYearFilter.trim().toLowerCase())) {
+    if (
+      sessionYearFilter.trim() &&
+      sessionYearFilter.trim().toUpperCase() !== "ALL"
+    ) {
+      const batch = allBatches.find(
+        (b) => b.id === item.batch_id || b.id === Number(item.batch_id),
+      );
+      if (
+        !batch ||
+        !(batch.session_year || "")
+          .toLowerCase()
+          .includes(sessionYearFilter.trim().toLowerCase())
+      ) {
         return false;
       }
     }
@@ -339,7 +366,8 @@ const ManageFacultyAllocationPage = () => {
             Manage Faculty Allocations
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            View, modify, or delete teaching assignments across academic subjects and batches
+            View, modify, or delete teaching assignments across academic
+            subjects and batches
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -451,9 +479,7 @@ const ManageFacultyAllocationPage = () => {
                     <tr
                       key={row.id}
                       className={`transition-colors ${
-                        isEditing
-                          ? "bg-blue-50/30"
-                          : "hover:bg-gray-50/60"
+                        isEditing ? "bg-blue-50/30" : "hover:bg-gray-50/60"
                       }`}
                     >
                       {/* Faculty column */}
@@ -462,7 +488,10 @@ const ManageFacultyAllocationPage = () => {
                           <select
                             value={editForm.faculty_id}
                             onChange={(e) =>
-                              setEditForm({ ...editForm, faculty_id: e.target.value })
+                              setEditForm({
+                                ...editForm,
+                                faculty_id: e.target.value,
+                              })
                             }
                             className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
                           >
@@ -491,16 +520,32 @@ const ManageFacultyAllocationPage = () => {
                           <select
                             value={editForm.batch_id}
                             onChange={(e) =>
-                              setEditForm({ ...editForm, batch_id: e.target.value })
+                              setEditForm({
+                                ...editForm,
+                                batch_id: e.target.value,
+                              })
                             }
                             className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
                           >
                             <option value="">-- Select Batch --</option>
                             {allBatches
-                              .filter((batch) => !sessionYearFilter.trim() || sessionYearFilter.trim().toUpperCase() === "ALL" || (batch.session_year || "").toLowerCase().includes(sessionYearFilter.trim().toLowerCase()) || batch.id === row.batch_id)
+                              .filter(
+                                (batch) =>
+                                  !sessionYearFilter.trim() ||
+                                  sessionYearFilter.trim().toUpperCase() ===
+                                    "ALL" ||
+                                  (batch.session_year || "")
+                                    .toLowerCase()
+                                    .includes(
+                                      sessionYearFilter.trim().toLowerCase(),
+                                    ) ||
+                                  batch.id === row.batch_id,
+                              )
                               .map((batch) => (
                                 <option key={batch.id} value={batch.id}>
-                                  {batch.batch_code} [{batch.session_year || "N/A"}] {batch.branch ? `(${batch.branch})` : ""}
+                                  {batch.batch_code} [
+                                  {batch.session_year || "N/A"}]{" "}
+                                  {batch.branch ? `(${batch.branch})` : ""}
                                 </option>
                               ))}
                           </select>
@@ -518,14 +563,19 @@ const ManageFacultyAllocationPage = () => {
                           <select
                             value={editForm.subject_id}
                             onChange={(e) =>
-                              setEditForm({ ...editForm, subject_id: e.target.value })
+                              setEditForm({
+                                ...editForm,
+                                subject_id: e.target.value,
+                              })
                             }
                             className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
                           >
                             <option value="">-- Select Subject --</option>
                             {allSubjects.map((sub) => (
                               <option key={sub.id} value={sub.id}>
-                                {sub.subject_code ? `${sub.subject_code} - ` : ""}
+                                {sub.subject_code
+                                  ? `${sub.subject_code} - `
+                                  : ""}
                                 {sub.subject_name}
                               </option>
                             ))}
@@ -544,7 +594,10 @@ const ManageFacultyAllocationPage = () => {
                           <select
                             value={editForm.batch_group || ""}
                             onChange={(e) =>
-                              setEditForm({ ...editForm, batch_group: e.target.value })
+                              setEditForm({
+                                ...editForm,
+                                batch_group: e.target.value,
+                              })
                             }
                             className="p-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
                           >

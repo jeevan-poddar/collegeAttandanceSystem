@@ -1,36 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
-import { getUser } from "../action/getUser";
+import { useSelector } from "react-redux";
 
 const SideBar = () => {
-  const [user, setUser] = useState(null);
+  const userRedux = useSelector((state) => state.user);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchUser = async () => {
-      try {
-        const response = await getUser();
-        if (isMounted && response) {
-          setUser(response);
-        }
-      } catch (error) {
-        console.error("Error loading user in SideBar:", error);
-      }
-    };
-    fetchUser();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const role = user?.role?.toLowerCase() || "";
+  const role = userRedux?.role?.toLowerCase() || "";
 
   // Role-Based Access hierarchy matching proxy.js permissions
   const showAdmin = role === "admin";
   const showHOD = role === "hod";
-  const showFaculty = role === "faculty" || role === "hod";
+  const showFaculty = role === "faculty" || role === "hod"; // HODs can access faculty sections
   const showStudent = role === "student";
 
   return (

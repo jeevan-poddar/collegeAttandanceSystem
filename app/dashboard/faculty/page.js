@@ -1,13 +1,16 @@
 "use client";
-import { fetchAttendance } from "@/app/action/fetchAttandance";
-import { fetchClassSession } from "@/app/action/fetchClassSession";
-import { fetchStudent } from "@/app/action/fetchStudent";
-import { submitAttendance } from "@/app/action/submitAttandance";
+import { fetchAttendance } from "@/app/action/attendance/fetchAttendance";
+import { getClassSessions } from "@/app/action/sessions/getClassSessions";
+import { getBatchStudents } from "@/app/action/batches/getBatchStudents";
+import { submitAttendance } from "@/app/action/attendance/submitAttendance";
 import Cell from "@/app/component/Cell";
 import React, { useEffect, useState } from "react";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useSelector } from "react-redux";
+import { callWithRole } from "@/app/utlis/callWithRole";
 
 const FacultyDashboardPage = () => {
+  const role = useSelector((state) => state.user.role);
   const [sessionDesOn, setSessionDesOn] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [activeClass, setActiveClass] = useState(null);
@@ -60,14 +63,17 @@ const FacultyDashboardPage = () => {
       }
       setLoading(true);
       try {
-        const data = await fetchClassSession();
+        const data = await callWithRole(
+          role,
+          ["faculty", "hod"],
+          getClassSessions,
+        );
         setClassSessions(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching class sessions:", error);
         setNotification({
           type: "error",
-          message:
-            "Failed to load class sessions from server. Please refresh.",
+          message: "Failed to load class sessions from server. Please refresh.",
         });
       } finally {
         setLoading(false);
@@ -75,7 +81,7 @@ const FacultyDashboardPage = () => {
     };
 
     fetchSessions();
-  }, []);
+  }, [role]);
 
   const markStudent = (studentId, status) => {
     setAttendance((prevAttendance) => ({
@@ -114,7 +120,12 @@ const FacultyDashboardPage = () => {
     setIsSubmitting(true);
     setNotification({ type: "", message: "" });
     try {
-      const result = await submitAttendance(attendanceRecords);
+      const result = await callWithRole(
+        role,
+        ["faculty", "hod"],
+        submitAttendance,
+        attendanceRecords,
+      );
       console.log("Attendance submission result:", result);
       if (result && result.success !== false && !result.error) {
         setNotification({
@@ -286,7 +297,10 @@ const FacultyDashboardPage = () => {
                                 setSessionDesOn(true);
                                 setStudentsLoading(true);
                                 try {
-                                  const studentData = await fetchStudent(
+                                  const studentData = await callWithRole(
+                                    role,
+                                    ["faculty", "hod"],
+                                    getBatchStudents,
                                     session.batchId,
                                     session.batch_group,
                                   );
@@ -322,7 +336,10 @@ const FacultyDashboardPage = () => {
                                     : [];
 
                                   setStudents(sortedStudents);
-                                  const attandanceData = await fetchAttendance(
+                                  const attandanceData = await callWithRole(
+                                    role,
+                                    ["faculty", "hod"],
+                                    fetchAttendance,
                                     session.id,
                                   );
                                   console.log(

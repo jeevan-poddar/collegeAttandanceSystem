@@ -1,18 +1,23 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import OAuthButton from "../component/OAuthButton";
 import Link from "next/link";
+import { loginUser } from "../action/auth/loginUser";
 
-const login = () => {
+const Login = () => {
+  const [loginError, setLoginError] = useState("");
   const {
     register,
     handleSubmit,
-    watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm();
-  const onSubmit = (data) => {
-    console.log(data);
+  const onSubmit = async (data) => {
+    setLoginError(""); // Clear previous error messages
+    const result = await loginUser(data);
+    if (!result.success) {
+      setLoginError(result.error);
+    }
   };
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-6 lg:px-8">
@@ -26,10 +31,15 @@ const login = () => {
               Please enter your credentials below
             </p>
           </div>
-
+          {loginError && (
+            <p className="text-xs font-medium text-red-500">{loginError}</p>
+          )}
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              <label
+                htmlFor="email"
+                className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1"
+              >
                 Email Address
               </label>
               <input
@@ -45,11 +55,18 @@ const login = () => {
                 })}
                 placeholder="Enter your email"
               />
-              {errors.email && <p className="mt-1 text-xs font-medium text-red-500">{errors.email.message}</p>}
+              {errors.email && (
+                <p className="mt-1 text-xs font-medium text-red-500">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              <label
+                htmlFor="password"
+                className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1"
+              >
                 Password
               </label>
               <input
@@ -65,13 +82,21 @@ const login = () => {
                 })}
                 placeholder="Enter your password"
               />
-              {errors.password && <p className="mt-1 text-xs font-medium text-red-500">{errors.password.message}</p>}
+              {errors.password && (
+                <p className="mt-1 text-xs font-medium text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm transition text-sm"
+                disabled={isSubmitting}
+                className={
+                  "w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm transition text-sm" +
+                  (isSubmitting ? " opacity-50 cursor-not-allowed" : "")
+                }
               >
                 Login
               </button>
@@ -83,7 +108,9 @@ const login = () => {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-400 font-medium">Or continue with</span>
+              <span className="bg-white px-2 text-gray-400 font-medium">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -92,7 +119,10 @@ const login = () => {
           <div className="text-center pt-2 border-t border-gray-100">
             <p className="text-xs text-gray-600">
               Don't have an account?{" "}
-              <Link href="/signUp" className="font-semibold text-blue-600 hover:text-blue-500 hover:underline">
+              <Link
+                href="/signUp"
+                className="font-semibold text-blue-600 hover:text-blue-500 hover:underline"
+              >
                 Sign up
               </Link>
             </p>
@@ -103,4 +133,4 @@ const login = () => {
   );
 };
 
-export default login;
+export default Login;

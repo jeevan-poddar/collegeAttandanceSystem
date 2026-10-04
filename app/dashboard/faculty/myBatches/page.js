@@ -1,13 +1,16 @@
 "use client";
-import { fetchAttandanceForOverall } from "@/app/action/fetchAttandanceForOverall";
-import { fetchBatches } from "@/app/action/fetchBatches";
-import { fetchSessionForAttandance } from "@/app/action/fetchSessionForAttandance";
-import { fetchStudent } from "@/app/action/fetchStudent";
+import { fetchOverallAttendance } from "@/app/action/attendance/fetchOverallAttendance";
+import { getFacultyBatches } from "@/app/action/batches/getFacultyBatches";
+import { fetchAttendanceSessions } from "@/app/action/attendance/fetchAttendanceSessions";
 import React, { useEffect, useState } from "react";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import AttendanceRegisterModal from "@/app/component/AttendanceRegisterModal";
+import { getBatchStudents } from "@/app/action/batches/getBatchStudents";
+import { useSelector } from "react-redux";
+import { callWithRole } from "@/app/utlis/callWithRole";
 
 const MyBatchesPage = () => {
+  const role = useSelector((state) => state.user.role);
   const [myBatches, setMyBatches] = useState([]);
   const [viewAttandance, setViewAttandance] = useState(false);
   const [sessionDetails, setSessionDetails] = useState([]);
@@ -51,7 +54,14 @@ const MyBatchesPage = () => {
 
   async function fetchSessions(batchId, subjectId, batchGroup = null) {
     try {
-      const data = await fetchSessionForAttandance(batchId, subjectId, batchGroup);
+      const data = await callWithRole(
+        role,
+        ["faculty", "hod"],
+        fetchAttendanceSessions,
+        batchId,
+        subjectId,
+        batchGroup,
+      );
       if (data.success) {
         setSessionDetails(data.data);
       } else {
@@ -76,28 +86,34 @@ const MyBatchesPage = () => {
       }
       setLoading(true);
       try {
-        const data = await fetchBatches();
+        const data = await callWithRole(
+          role,
+          ["faculty", "hod"],
+          getFacultyBatches,
+        );
         if (data.success) {
           setMyBatches(data.data);
         } else {
           console.error("Error fetching batches:", data.error);
           setNotification({
             type: "error",
-            message: data.error || "Failed to load academic batches from database.",
+            message:
+              data.error || "Failed to load academic batches from database.",
           });
         }
       } catch (error) {
         console.error("Error fetching batches:", error);
         setNotification({
           type: "error",
-          message: "An unexpected error occurred while loading batches. Please refresh.",
+          message:
+            "An unexpected error occurred while loading batches. Please refresh.",
         });
       } finally {
         setLoading(false);
       }
     }
     fetchBatchesFrontend();
-  }, []);
+  }, [role]);
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen bg-gray-50 space-y-6">
       <div className="border-b border-gray-200 pb-4">
@@ -172,7 +188,10 @@ const MyBatchesPage = () => {
                       batch.subject_id,
                       batch.batch_group,
                     );
-                    const studentResponse = await fetchStudent(
+                    const studentResponse = await callWithRole(
+                      role,
+                      ["faculty", "hod"],
+                      getBatchStudents,
                       batch.batch_id,
                       batch.batch_group,
                     );
@@ -205,14 +224,19 @@ const MyBatchesPage = () => {
                       ? studentResponse.data.map((student) => student.id)
                       : [];
 
-                    const attandanceData = await fetchAttandanceForOverall(
+                    const attendanceData = await callWithRole(
+                      role,
+                      ["faculty", "hod"],
+                      fetchOverallAttendance,
                       batch.batch_id,
                       sessionIds,
                       studentIds,
                     );
-                    if (attandanceData.success) {
-                      setAttandance(attandanceData.data);
-                      setSelectedTitle(`${batch.batch_code} — ${batch.subject_name}`);
+                    if (attendanceData.success) {
+                      setAttandance(attendanceData.data);
+                      setSelectedTitle(
+                        `${batch.batch_code} — ${batch.subject_name}`,
+                      );
                       setViewAttandance(true);
                     } else {
                       setNotification({

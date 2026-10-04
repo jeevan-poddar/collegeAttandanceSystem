@@ -1,21 +1,25 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import OAuthButton from "../component/OAuthButton";
 import Link from "next/link";
-import { createUser } from "../action/createUser";
+import { createUser } from "../action/auth/createUser";
 
 const signUp = () => {
+  const [signUpError, setSignUpError] = useState("");
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm();
-  const onSubmit = (data) => {
-    console.log(data);
-    createUser(data);
+  const onSubmit = async (data) => {
+    setSignUpError(""); // Clear previous error messages
+    const result = await createUser(data);
+    if (!result.success) {
+      setSignUpError(result.error);
+    }
   };
 
   return (
@@ -26,6 +30,9 @@ const signUp = () => {
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
               Create a New Account
             </h1>
+            {signUpError && (
+              <p className="text-xs font-medium text-red-500">{signUpError}</p>
+            )}
             <p className="mt-1 text-xs text-gray-500">
               Fill in your details below to get started
             </p>
@@ -33,7 +40,10 @@ const signUp = () => {
 
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div>
-              <label htmlFor="fullName" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              <label
+                htmlFor="fullName"
+                className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1"
+              >
                 Full Name
               </label>
               <input
@@ -49,11 +59,18 @@ const signUp = () => {
                 })}
                 placeholder="Enter your full name"
               />
-              {errors.fullName && <p className="mt-1 text-xs font-medium text-red-500">{errors.fullName.message}</p>}
+              {errors.fullName && (
+                <p className="mt-1 text-xs font-medium text-red-500">
+                  {errors.fullName.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              <label
+                htmlFor="email"
+                className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1"
+              >
                 Email Address
               </label>
               <input
@@ -69,11 +86,18 @@ const signUp = () => {
                 })}
                 placeholder="Enter your email"
               />
-              {errors.email && <p className="mt-1 text-xs font-medium text-red-500">{errors.email.message}</p>}
+              {errors.email && (
+                <p className="mt-1 text-xs font-medium text-red-500">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              <label
+                htmlFor="password"
+                className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1"
+              >
                 Password
               </label>
               <input
@@ -89,11 +113,18 @@ const signUp = () => {
                 })}
                 placeholder="Enter your password"
               />
-              {errors.password && <p className="mt-1 text-xs font-medium text-red-500">{errors.password.message}</p>}
+              {errors.password && (
+                <p className="mt-1 text-xs font-medium text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1"
+              >
                 Confirm Password
               </label>
               <input
@@ -110,7 +141,11 @@ const signUp = () => {
                 })}
                 placeholder="Confirm your password"
               />
-              {errors.confirmPassword && <p className="mt-1 text-xs font-medium text-red-500">{errors.confirmPassword.message}</p>}
+              {errors.confirmPassword && (
+                <p className="mt-1 text-xs font-medium text-red-500">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
 
             <div className="pt-2 space-y-2.5">
@@ -121,9 +156,15 @@ const signUp = () => {
                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     {...register("terms", { required: true })}
                   />
-                  <span className="text-xs text-gray-600 font-medium">I agree to the terms and conditions</span>
+                  <span className="text-xs text-gray-600 font-medium">
+                    I agree to the terms and conditions
+                  </span>
                 </label>
-                {errors.terms && <p className="mt-1 text-xs text-red-500 font-medium">You must agree to the terms and conditions</p>}
+                {errors.terms && (
+                  <p className="mt-1 text-xs text-red-500 font-medium">
+                    You must agree to the terms and conditions
+                  </p>
+                )}
               </div>
 
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -132,7 +173,9 @@ const signUp = () => {
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                   {...register("newsletter")}
                 />
-                <span className="text-xs text-gray-600 font-medium">Subscribe to newsletter</span>
+                <span className="text-xs text-gray-600 font-medium">
+                  Subscribe to newsletter
+                </span>
               </label>
             </div>
 
@@ -140,7 +183,10 @@ const signUp = () => {
               <input
                 type="submit"
                 value="Sign Up"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm transition text-sm cursor-pointer"
+                className={
+                  "w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm transition text-sm cursor-pointer" +
+                  (isSubmitting ? " opacity-50 cursor-not-allowed" : "")
+                }
               />
             </div>
           </form>
@@ -150,7 +196,9 @@ const signUp = () => {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-400 font-medium">Or continue with</span>
+              <span className="bg-white px-2 text-gray-400 font-medium">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -159,7 +207,10 @@ const signUp = () => {
           <div className="text-center pt-2 border-t border-gray-100">
             <p className="text-xs text-gray-600">
               Already have an account?{" "}
-              <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500 hover:underline">
+              <Link
+                href="/login"
+                className="font-semibold text-blue-600 hover:text-blue-500 hover:underline"
+              >
                 Login here
               </Link>
             </p>

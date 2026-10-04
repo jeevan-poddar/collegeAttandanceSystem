@@ -2,10 +2,13 @@
 
 import SearchAbleDropdown from "@/app/component/SearchableDropdown";
 import React, { useState } from "react";
-import { submitBatches } from "@/app/action/submitBatches";
+import { useSelector } from "react-redux";
+import { createBatches } from "@/app/action/batches/createBatches";
+import { callWithRole } from "@/app/utlis/callWithRole";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const BatchesPage = () => {
+  const role = useSelector((state) => state.user.role);
   const [dataToInsert, setDataToInsert] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState({ type: "", message: "" });
@@ -53,7 +56,7 @@ const BatchesPage = () => {
         message: "Please add at least one batch row before submitting.",
       });
       return;
-     }
+    }
 
     const hasEmpty = dataToInsert.some(
       (item) =>
@@ -89,7 +92,12 @@ const BatchesPage = () => {
     setIsSubmitting(true);
     setNotification({ type: "", message: "" });
     try {
-      const res = await submitBatches(dataToInsert);
+      const res = await callWithRole(
+        role,
+        ["admin"],
+        createBatches,
+        dataToInsert,
+      );
       if (res && res.success) {
         setNotification({
           type: "success",
@@ -176,7 +184,6 @@ const BatchesPage = () => {
       )}
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-visible pb-32">
-
         <div className="overflow-visible">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>

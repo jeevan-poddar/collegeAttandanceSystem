@@ -1,15 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import {
-  fetchBatches,
-  fetchSubject,
-  fetchFaculty,
-} from "@/app/action/fetchForFacultyAllocation";
-import { fetchAllocatedFaculty } from "@/app/action/manageFacultyAllocation";
-import { fetchSessionForAttandance } from "@/app/action/fetchSessionForAttandance";
-import { fetchStudent } from "@/app/action/fetchStudent";
-import { fetchAttandanceForOverall } from "@/app/action/fetchAttandanceForOverall";
+  getBatchesForAllocation,
+  getFaculty,
+} from "@/app/action/batches/getAllocationOptions";
+import { fetchAllocatedFaculty } from "@/app/action/faculty/facultyAllocation";
+import { fetchAttendanceSessions } from "@/app/action/attendance/fetchAttendanceSessions";
+import { fetchOverallAttendance } from "@/app/action/attendance/fetchOverallAttendance";
 import AttendanceRegisterModal from "@/app/component/AttendanceRegisterModal";
 import {
   Search,
@@ -25,8 +24,12 @@ import {
   ChevronRight,
   GraduationCap,
 } from "lucide-react";
+import { getBatchStudents } from "@/app/action/batches/getBatchStudents";
+import { getSubjects } from "@/app/action/subjects/subjectActions";
+import { callWithRole } from "@/app/utlis/callWithRole";
 
 const HODBatchAttendancePage = () => {
+  const role = useSelector((state) => state.user.role);
   const [allBatches, setAllBatches] = useState([]);
   const [allocations, setAllocations] = useState([]);
   const [allSubjects, setAllSubjects] = useState([]);
@@ -78,7 +81,8 @@ const HODBatchAttendancePage = () => {
     if (typeof window !== "undefined" && !window.navigator.onLine) {
       setNotification({
         type: "error",
-        message: "Cannot load attendance records: No internet connection detected.",
+        message:
+          "Cannot load attendance records: No internet connection detected.",
       });
       return;
     }
@@ -87,10 +91,10 @@ const HODBatchAttendancePage = () => {
 
     try {
       const [batchRes, allocRes, subRes, facRes] = await Promise.all([
-        fetchBatches("ALL"),
-        fetchAllocatedFaculty(),
-        fetchSubject(),
-        fetchFaculty(),
+        callWithRole(role, ["hod"], getBatchesForAllocation, "ALL"),
+        callWithRole(role, ["hod"], fetchAllocatedFaculty),
+        callWithRole(role, ["hod"], getSubjects),
+        callWithRole(role, ["hod"], getFaculty),
       ]);
 
       if (batchRes?.data) setAllBatches(batchRes.data);
@@ -101,7 +105,8 @@ const HODBatchAttendancePage = () => {
       console.error("Error fetching HOD attendance data:", error);
       setNotification({
         type: "error",
-        message: "An unexpected error occurred while loading records. Please refresh.",
+        message:
+          "An unexpected error occurred while loading records. Please refresh.",
       });
     } finally {
       setLoading(false);
@@ -115,7 +120,8 @@ const HODBatchAttendancePage = () => {
         if (isMounted) {
           setNotification({
             type: "error",
-            message: "Cannot load attendance records: No internet connection detected.",
+            message:
+              "Cannot load attendance records: No internet connection detected.",
           });
           setLoading(false);
         }
@@ -123,10 +129,10 @@ const HODBatchAttendancePage = () => {
       }
       try {
         const [batchRes, allocRes, subRes, facRes] = await Promise.all([
-          fetchBatches("ALL"),
-          fetchAllocatedFaculty(),
-          fetchSubject(),
-          fetchFaculty(),
+          callWithRole(role, ["hod"], getBatchesForAllocation, "ALL"),
+          callWithRole(role, ["hod"], fetchAllocatedFaculty),
+          callWithRole(role, ["hod"], getSubjects),
+          callWithRole(role, ["hod"], getFaculty),
         ]);
         if (!isMounted) return;
         if (batchRes?.data) setAllBatches(batchRes.data);
@@ -138,7 +144,8 @@ const HODBatchAttendancePage = () => {
         console.error("Error fetching initial attendance data:", error);
         setNotification({
           type: "error",
-          message: "An unexpected error occurred while loading records. Please refresh.",
+          message:
+            "An unexpected error occurred while loading records. Please refresh.",
         });
       } finally {
         if (isMounted) setLoading(false);
@@ -148,7 +155,7 @@ const HODBatchAttendancePage = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [role]);
 
   const getFacultyName = (id) => {
     const found = allFaculty.find((f) => f.id === id || f.id === Number(id));
@@ -166,7 +173,10 @@ const HODBatchAttendancePage = () => {
   };
 
   const filteredBatches = allBatches.filter((batch) => {
-    if (sessionYearFilter.trim() && sessionYearFilter.trim().toUpperCase() !== "ALL") {
+    if (
+      sessionYearFilter.trim() &&
+      sessionYearFilter.trim().toUpperCase() !== "ALL"
+    ) {
       if (
         !(batch.session_year || "")
           .toLowerCase()
@@ -191,12 +201,39 @@ const HODBatchAttendancePage = () => {
       )
     : [];
 
+  const handleBatchSelect = async (batch) => {
+    setNotification({ type: "", message: "" });
+
+    try {
+      const subjectsResponse = await callWithRole(
+        role,
+        ["hod"],
+        getSubjects,
+        batch.id,
+      );
+
+      if (!subjectsResponse?.success) {
+        throw new Error(subjectsResponse?.error || "Failed to load subjects.");
+      }
+
+      setAllSubjects(subjectsResponse.data || []);
+      setSelectedBatch(batch);
+    } catch (error) {
+      console.error("Error loading batch subjects:", error);
+      setNotification({
+        type: "error",
+        message: "Unable to load subjects for this batch. Please try again.",
+      });
+    }
+  };
+
   const handleSubjectClick = async (alloc) => {
     if (subjectLoadingId === alloc.id) return;
     if (typeof window !== "undefined" && !window.navigator.onLine) {
       setNotification({
         type: "error",
-        message: "Cannot load attendance details: No internet connection detected.",
+        message:
+          "Cannot load attendance details: No internet connection detected.",
       });
       return;
     }
@@ -209,8 +246,21 @@ const HODBatchAttendancePage = () => {
       const subInfo = getSubjectDetails(targetSubjectId);
 
       const [sessionResponse, studentResponse] = await Promise.all([
-        fetchSessionForAttandance(targetBatchId, targetSubjectId, alloc.batch_group),
-        fetchStudent(targetBatchId, alloc.batch_group),
+        callWithRole(
+          role,
+          ["hod"],
+          fetchAttendanceSessions,
+          targetBatchId,
+          targetSubjectId,
+          alloc.batch_group,
+        ),
+        callWithRole(
+          role,
+          ["hod"],
+          getBatchStudents,
+          targetBatchId,
+          alloc.batch_group,
+        ),
       ]);
 
       const sortedStudents = studentResponse?.success
@@ -237,7 +287,10 @@ const HODBatchAttendancePage = () => {
         ? studentResponse.data.map((stu) => stu.id)
         : [];
 
-      const attendanceData = await fetchAttandanceForOverall(
+      const attendanceData = await callWithRole(
+        role,
+        ["hod"],
+        fetchOverallAttendance,
         targetBatchId,
         sessionIds,
         studentIds,
@@ -280,7 +333,8 @@ const HODBatchAttendancePage = () => {
             <span>Batch Attendance Monitoring</span>
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Review comprehensive student attendance registers filtered by academic session year and batch
+            Review comprehensive student attendance registers filtered by
+            academic session year and batch
           </p>
         </div>
         <button
@@ -372,10 +426,7 @@ const HODBatchAttendancePage = () => {
                 return (
                   <div
                     key={batch.id}
-                    onClick={() => {
-                      setSelectedBatch(batch);
-                      setNotification({ type: "", message: "" });
-                    }}
+                    onClick={() => handleBatchSelect(batch)}
                     className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer flex flex-col justify-between space-y-5 group"
                   >
                     <div className="space-y-3">
@@ -413,7 +464,8 @@ const HODBatchAttendancePage = () => {
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center text-gray-500 text-sm font-medium shadow-xs">
-              No academic batches match your current search and session year filter.
+              No academic batches match your current search and session year
+              filter.
             </div>
           )}
         </div>
@@ -441,7 +493,12 @@ const HODBatchAttendancePage = () => {
                 </span>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                Branch: <strong className="text-gray-800">{selectedBatch.branch || "General"}</strong> • Click on any subject below to inspect student attendance registers
+                Branch:{" "}
+                <strong className="text-gray-800">
+                  {selectedBatch.branch || "General"}
+                </strong>{" "}
+                • Click on any subject below to inspect student attendance
+                registers
               </p>
             </div>
             <div className="text-xs font-bold text-gray-600 uppercase tracking-wider bg-gray-100 px-3.5 py-2 rounded-xl border border-gray-200/80 shrink-0">
@@ -504,7 +561,8 @@ const HODBatchAttendancePage = () => {
                 No teaching faculty are currently allocated to this batch.
               </p>
               <p className="text-gray-500 text-sm">
-                Use the Manage Faculty Allocations section to assign subjects and teachers to {selectedBatch.batch_code}.
+                Use the Manage Faculty Allocations section to assign subjects
+                and teachers to {selectedBatch.batch_code}.
               </p>
             </div>
           )}

@@ -59,7 +59,6 @@ $$ LANGUAGE plpgsql;
 
 
 
-
 ALTER TABLE faculty_allocations
 DROP CONSTRAINT faculty_allocations_faculty_id_batch_id_subject_id_key;
 

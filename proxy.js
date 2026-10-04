@@ -1,19 +1,41 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 
-function getDashboardByRole(role) {
-  switch (role) {
-    case "admin":
-      return "/dashboard/admin";
-    case "hod":
-      return "/dashboard/hod";
-    case "faculty":
-      return "/dashboard/faculty";
-    case "student":
-      return "/dashboard/student";
-    default:
-      return "/";
-  }
+const ROLE_DASHBOARDS = {
+  admin: "/dashboard/admin",
+  hod: "/dashboard/hod",
+  faculty: "/dashboard/faculty",
+  student: "/dashboard/student",
+};
+
+const PROTECTED_ROUTES = [
+  { prefix: "/dashboard/admin", roles: ["admin"] },
+  { prefix: "/dashboard/hod", roles: ["admin", "hod"] },
+  { prefix: "/dashboard/faculty", roles: [ "hod", "faculty"] },
+  { prefix: "/dashboard/student", roles: ["student"] },
+];
+
+const AUTH_ROUTES = new Set(["/login", "/signUp"]);
+
+function getUserRole(claims) {
+  return typeof claims?.user_role === "string"
+    ? claims.user_role.toLowerCase()
+    : null;
+}
+
+function getDashboardPath(role) {
+  return ROLE_DASHBOARDS[role] ?? "/login";
+}
+
+function redirectTo(request, pathname, searchParams) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = searchParams ?? "";
+  return NextResponse.redirect(url);
+}
+
+function getProtectedRoute(pathname) {
+  return PROTECTED_ROUTES.find(({ prefix }) => pathname.startsWith(prefix));
 }
 
 export async function proxy(request) {
@@ -32,91 +54,55 @@ export async function proxy(request) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value, options),
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
+          for (const { name, value, options } of cookiesToSet) {
+            request.cookies.set(name, value, options);
+          }
+
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+
+          for (const { name, value, options } of cookiesToSet) {
+            response.cookies.set(name, value, options);
+          }
         },
       },
     },
   );
 
-  // Retrieve authenticated user from Supabase session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  const isAuthenticated = !error && Boolean(claims?.sub);
+  const role = getUserRole(claims);
+  const pathname = request.nextUrl.pathname;
+  const isDashboardRoute = pathname === "/dashboard" || pathname === "/dashboard/";
+  const protectedRoute = getProtectedRoute(pathname);
 
-  const path = request.nextUrl.pathname;
-  const isDashboardPath = path.startsWith("/dashboard");
-  const isAuthPath = path === "/login" || path === "/signUp";
+  if (!isAuthenticated) {
+    if (isDashboardRoute || protectedRoute) {
+      const redirectToPath = `${pathname}${request.nextUrl.search}`;
+      return redirectTo(request, "/login", `?redirectTo=${encodeURIComponent(redirectToPath)}`);
+    }
 
-  // 1. If user is unauthenticated and attempting to access a dashboard path, redirect to login
-  if (!user && isDashboardPath) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirectTo", path);
-    return NextResponse.redirect(loginUrl);
+    return response;
   }
 
-  // 2. If user is authenticated, check their assigned role in users table
-  if (user) {
-    let userRole = "unknown";
-    const { data: userData, error: roleError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (!roleError && userData && userData.role) {
-      userRole = userData.role.toLowerCase();
+  if (AUTH_ROUTES.has(pathname)) {
+    if (!role) {
+      return response;
     }
 
-    // Automatically redirect authenticated users away from login/signup pages to their portal
-    if (isAuthPath) {
-      const targetUrl = new URL(getDashboardByRole(userRole), request.url);
-      return NextResponse.redirect(targetUrl);
-    }
+    return redirectTo(request, getDashboardPath(role));
+  }
 
-    // Automatically route general /dashboard requests to the user's specific role portal
-    if (path === "/dashboard" || path === "/dashboard/") {
-      const targetUrl = new URL(getDashboardByRole(userRole), request.url);
-      return NextResponse.redirect(targetUrl);
-    }
+  if (isDashboardRoute) {
+    return redirectTo(request, getDashboardPath(role));
+  }
 
-    // Enforce Role-Based Access Control (RBAC) on specific dashboard sections
-    // Admin section: accessible strictly to 'admin'
-    if (path.startsWith("/dashboard/admin")) {
-      if (userRole !== "admin") {
-        const fallbackUrl = new URL(getDashboardByRole(userRole), request.url);
-        return NextResponse.redirect(fallbackUrl);
-      }
-    }
-
-    // HOD section: accessible to 'hod' and 'admin'
-    if (path.startsWith("/dashboard/hod")) {
-      if (!["hod"].includes(userRole)) {
-        const fallbackUrl = new URL(getDashboardByRole(userRole), request.url);
-        return NextResponse.redirect(fallbackUrl);
-      }
-    }
-
-    // Faculty section: accessible to 'faculty', 'hod', and 'admin'
-    if (path.startsWith("/dashboard/faculty")) {
-      if (!["faculty", "hod"].includes(userRole)) {
-        const fallbackUrl = new URL(getDashboardByRole(userRole), request.url);
-        return NextResponse.redirect(fallbackUrl);
-      }
-    }
-
-    // Student section: accessible to all valid institutional roles
-    if (path.startsWith("/dashboard/student")) {
-      if (!["student"].includes(userRole)) {
-        const fallbackUrl = new URL(getDashboardByRole(userRole), request.url);
-        return NextResponse.redirect(fallbackUrl);
-      }
-    }
+  if (protectedRoute && (!role || !protectedRoute.roles.includes(role))) {
+    return redirectTo(request, getDashboardPath(role));
   }
 
   return response;

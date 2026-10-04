@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import {
-  fetchStudentDashboardData,
-  fetchStudentDashboardById,
-} from "@/app/action/fetchStudentDashboard";
-import { fetchSessionForAttandance } from "@/app/action/fetchSessionForAttandance";
-import { fetchAttandanceForOverall } from "@/app/action/fetchAttandanceForOverall";
+  getStudentDashboard,
+  getStudentDashboardById,
+} from "@/app/action/student/studentDashboard";
+import { fetchAttendanceSessions } from "@/app/action/attendance/fetchAttendanceSessions";
+import { fetchOverallAttendance } from "@/app/action/attendance/fetchOverallAttendance";
+import { callWithRole } from "@/app/utlis/callWithRole";
 import AttendanceRegisterModal from "@/app/component/AttendanceRegisterModal";
 import {
   Search,
@@ -31,6 +33,7 @@ const StudentDashboardComponent = ({
   onClose = null,
   isModal = false,
 }) => {
+  const role = useSelector((state) => state.user.role);
   const [student, setStudent] = useState(null);
   const [batches, setBatches] = useState([]);
   const [allocations, setAllocations] = useState([]);
@@ -80,7 +83,8 @@ const StudentDashboardComponent = ({
     if (typeof window !== "undefined" && !window.navigator.onLine) {
       setNotification({
         type: "error",
-        message: "Cannot refresh academic records: No internet connection detected.",
+        message:
+          "Cannot refresh academic records: No internet connection detected.",
       });
       return;
     }
@@ -89,8 +93,13 @@ const StudentDashboardComponent = ({
 
     try {
       const response = studentId
-        ? await fetchStudentDashboardById(studentId)
-        : await fetchStudentDashboardData();
+        ? await callWithRole(
+            role,
+            ["admin", "hod"],
+            getStudentDashboardById,
+            studentId,
+          )
+        : await callWithRole(role, ["student"], getStudentDashboard);
 
       if (response.success && response.data) {
         setStudent(response.data.student);
@@ -122,7 +131,8 @@ const StudentDashboardComponent = ({
         if (isMounted) {
           setNotification({
             type: "error",
-            message: "Cannot load academic records: No internet connection detected.",
+            message:
+              "Cannot load academic records: No internet connection detected.",
           });
           setLoading(false);
         }
@@ -130,8 +140,13 @@ const StudentDashboardComponent = ({
       }
       try {
         const response = studentId
-          ? await fetchStudentDashboardById(studentId)
-          : await fetchStudentDashboardData();
+          ? await callWithRole(
+              role,
+              ["admin", "hod"],
+              getStudentDashboardById,
+              studentId,
+            )
+          : await callWithRole(role, ["student"], getStudentDashboard);
 
         if (!isMounted) return;
         if (response.success && response.data) {
@@ -161,10 +176,13 @@ const StudentDashboardComponent = ({
     return () => {
       isMounted = false;
     };
-  }, [studentId]);
+  }, [role, studentId]);
 
   const filteredBatches = batches.filter((batch) => {
-    if (sessionYearFilter.trim() && sessionYearFilter.trim().toUpperCase() !== "ALL") {
+    if (
+      sessionYearFilter.trim() &&
+      sessionYearFilter.trim().toUpperCase() !== "ALL"
+    ) {
       if (
         !(batch.session_year || "")
           .toLowerCase()
@@ -206,7 +224,10 @@ const StudentDashboardComponent = ({
       const targetBatchId = Number(alloc.batch_id);
       const targetSubjectId = Number(alloc.subject_id);
 
-      const sessionResponse = await fetchSessionForAttandance(
+      const sessionResponse = await callWithRole(
+        role,
+        ["student", "hod", "admin"],
+        fetchAttendanceSessions,
         targetBatchId,
         targetSubjectId,
         alloc.batch_group || student?.batch_group,
@@ -216,7 +237,10 @@ const StudentDashboardComponent = ({
         ? sessionResponse.data.map((s) => s.id)
         : [];
 
-      const attendanceResponse = await fetchAttandanceForOverall(
+      const attendanceResponse = await callWithRole(
+        role,
+        ["student", "hod", "admin"],
+        fetchOverallAttendance,
         targetBatchId,
         sessionIds,
         [student.id],
@@ -297,7 +321,11 @@ const StudentDashboardComponent = ({
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
                   <User className="w-3.5 h-3.5" />
-                  <span>{isModal ? "Student Inspection Profile" : "Active Student Profile"}</span>
+                  <span>
+                    {isModal
+                      ? "Student Inspection Profile"
+                      : "Active Student Profile"}
+                  </span>
                 </div>
                 <h2 className="text-2xl font-black tracking-tight">
                   {student.name || "Student Portal"}
@@ -305,10 +333,20 @@ const StudentDashboardComponent = ({
                 <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-blue-100 pt-1">
                   <span className="flex items-center gap-1.5">
                     <Award className="w-4 h-4 text-amber-300" />
-                    <span>C. Roll No: <strong className="text-white font-bold">{student.c_roll_number || "N/A"}</strong></span>
+                    <span>
+                      C. Roll No:{" "}
+                      <strong className="text-white font-bold">
+                        {student.c_roll_number || "N/A"}
+                      </strong>
+                    </span>
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-300 opacity-60 hidden sm:inline-block"></span>
-                  <span>U. Roll No: <strong className="text-white font-bold">{student.u_roll_number || "N/A"}</strong></span>
+                  <span>
+                    U. Roll No:{" "}
+                    <strong className="text-white font-bold">
+                      {student.u_roll_number || "N/A"}
+                    </strong>
+                  </span>
                 </div>
               </div>
               <div className="bg-white/10 p-4 rounded-xl backdrop-blur-xs space-y-2 border border-white/15 shrink-0">
@@ -364,7 +402,8 @@ const StudentDashboardComponent = ({
                   {filteredBatches.map((batch) => {
                     const subjectCount = allocations.filter(
                       (a) =>
-                        a.batch_id === batch.id || Number(a.batch_id) === batch.id,
+                        a.batch_id === batch.id ||
+                        Number(a.batch_id) === batch.id,
                     ).length;
 
                     return (
@@ -391,7 +430,10 @@ const StudentDashboardComponent = ({
                               {batch.branch || "Academic Branch"}
                             </h3>
                             <p className="text-xs text-gray-500 font-medium mt-1">
-                              Course: {batch.course || "Degree Program"} {batch.semester ? `• Semester ${batch.semester}` : ""}
+                              Course: {batch.course || "Degree Program"}{" "}
+                              {batch.semester
+                                ? `• Semester ${batch.semester}`
+                                : ""}
                             </p>
                           </div>
                         </div>
@@ -402,7 +444,8 @@ const StudentDashboardComponent = ({
                             <span>{subjectCount} Subject(s)</span>
                           </span>
                           <span className="text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5">
-                            Select Batch <ChevronRight className="w-3.5 h-3.5" />
+                            Select Batch{" "}
+                            <ChevronRight className="w-3.5 h-3.5" />
                           </span>
                         </div>
                       </div>
@@ -411,7 +454,8 @@ const StudentDashboardComponent = ({
                 </div>
               ) : (
                 <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center text-gray-500 text-sm font-medium shadow-xs">
-                  No enrolled academic batches match your current search and session year filter.
+                  No enrolled academic batches match your current search and
+                  session year filter.
                 </div>
               )}
             </div>
@@ -439,7 +483,12 @@ const StudentDashboardComponent = ({
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mt-1">
-                    Branch: <strong className="text-gray-800">{selectedBatch.branch || "General"}</strong> • Click on any subject below to open session attendance records
+                    Branch:{" "}
+                    <strong className="text-gray-800">
+                      {selectedBatch.branch || "General"}
+                    </strong>{" "}
+                    • Click on any subject below to open session attendance
+                    records
                   </p>
                 </div>
                 <div className="text-xs font-bold text-gray-600 uppercase tracking-wider bg-gray-100 px-3.5 py-2 rounded-xl border border-gray-200/80 shrink-0">
@@ -552,7 +601,8 @@ const StudentDashboardComponent = ({
                   Student Academic Profile
                 </h2>
                 <p className="text-xs font-medium text-gray-500">
-                  Comprehensive dashboard inspection and batch enrollment details
+                  Comprehensive dashboard inspection and batch enrollment
+                  details
                 </p>
               </div>
             </div>
@@ -562,7 +612,9 @@ const StudentDashboardComponent = ({
                 disabled={loading || subjectLoadingId !== null}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200/80 text-gray-700 hover:text-gray-900 rounded-lg text-xs font-semibold transition border border-gray-200 disabled:opacity-50 shadow-2xs cursor-pointer"
               >
-                <RefreshCw className={`w-3.5 h-3.5 text-gray-600 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`w-3.5 h-3.5 text-gray-600 ${loading ? "animate-spin" : ""}`}
+                />
                 <span>Refresh</span>
               </button>
               <button
@@ -593,7 +645,8 @@ const StudentDashboardComponent = ({
             <span>Student Academic Dashboard</span>
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            View your enrolled semester batches, assigned lecture subjects, and real-time attendance registers
+            View your enrolled semester batches, assigned lecture subjects, and
+            real-time attendance registers
           </p>
         </div>
         <button

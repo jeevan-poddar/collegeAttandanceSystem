@@ -1,16 +1,19 @@
 "use client";
 import {
-  fetchBatches,
-  fetchFaculty,
-  fetchSubject,
-} from "@/app/action/fetchForFacultyAllocation";
-import { submitFacultyAllocation } from "@/app/action/submitFacultyAllocation";
+  getBatchesForAllocation,
+  getFaculty,
+} from "@/app/action/batches/getAllocationOptions";
+import { createFacultyAllocations } from "@/app/action/faculty/createFacultyAllocations";
 import SearchAbleDropdown from "@/app/component/SearchableDropdown";
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { getSubjects } from "@/app/action/subjects/subjectActions";
+import { callWithRole } from "@/app/utlis/callWithRole";
 
 const Page = () => {
+  const role = useSelector((state) => state.user.role);
   const [dataToInsert, setDataToInsert] = useState([]);
   const [allFaculty, setAllFaculty] = useState([]);
   const [allBatches, setAllBatches] = useState([]);
@@ -63,7 +66,8 @@ const Page = () => {
     if (dataToInsert.length === 0) {
       setNotification({
         type: "error",
-        message: "Please add at least one faculty allocation row before submitting.",
+        message:
+          "Please add at least one faculty allocation row before submitting.",
       });
       return;
     }
@@ -81,7 +85,8 @@ const Page = () => {
     }
 
     const combos = dataToInsert.map(
-      (item) => `${item.faculty_id}_${item.batch_id}_${item.subject_id}_${item.batch_group || 'all'}`,
+      (item) =>
+        `${item.faculty_id}_${item.batch_id}_${item.subject_id}_${item.batch_group || "all"}`,
     );
     if (new Set(combos).size !== combos.length) {
       setNotification({
@@ -95,7 +100,12 @@ const Page = () => {
     setIsSubmitting(true);
     setNotification({ type: "", message: "" });
     try {
-      const res = await submitFacultyAllocation(dataToInsert);
+      const res = await callWithRole(
+        role,
+        ["hod"],
+        createFacultyAllocations,
+        dataToInsert,
+      );
       if (res && res.success) {
         setNotification({
           type: "success",
@@ -163,11 +173,16 @@ const Page = () => {
       }
       setLoading(true);
       try {
-        const facultyData = await fetchFaculty();
+        const facultyData = await callWithRole(role, ["hod"], getFaculty);
         if (facultyData?.data) setAllFaculty(facultyData.data);
-        const batchesData = await fetchBatches(sessionYear);
+        const batchesData = await callWithRole(
+          role,
+          ["hod"],
+          getBatchesForAllocation,
+          sessionYear,
+        );
         if (batchesData?.data) setAllBatches(batchesData.data);
-        const subjectsData = await fetchSubject();
+        const subjectsData = await callWithRole(role, ["hod"], getSubjects);
         if (subjectsData?.data) setAllSubjects(subjectsData.data);
       } catch (error) {
         console.error("Error loading dropdown data:", error);
@@ -181,7 +196,7 @@ const Page = () => {
       }
     };
     fetachData();
-  }, [sessionYear]);
+  }, [role, sessionYear]);
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen bg-gray-50 space-y-8">
       <div>
@@ -341,7 +356,9 @@ const Page = () => {
                     <td className="p-2.5 border-r border-gray-200 align-top">
                       <select
                         value={row.batch_group || ""}
-                        onChange={(e) => updateRow(index, "batch_group", e.target.value)}
+                        onChange={(e) =>
+                          updateRow(index, "batch_group", e.target.value)
+                        }
                         className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition font-medium text-gray-700"
                       >
                         <option value="">All / General</option>

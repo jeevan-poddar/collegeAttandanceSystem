@@ -1,16 +1,19 @@
 "use client";
 import {
-  fetchBatches,
-  fetchFaculty,
-  fetchSubject,
-} from "@/app/action/fetchForFacultyAllocation";
+  getBatchesForAllocation,
+  getFaculty,
+} from "@/app/action/batches/getAllocationOptions";
 import SearchAbleDropdown from "@/app/component/SearchableDropdown";
 import { useForm } from "react-hook-form";
 import React, { useEffect, useState } from "react";
-import { submitTimeTable } from "@/app/action/submitTimeTable";
+import { useSelector } from "react-redux";
+import { createTimetable } from "@/app/action/timetable/createTimetable";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { getSubjects } from "@/app/action/subjects/subjectActions";
+import { callWithRole } from "@/app/utlis/callWithRole";
 
 const TimetablePage = () => {
+  const role = useSelector((state) => state.user.role);
   const [dataToInsert, setDataToInsert] = useState([]);
   const [allSubjects, setAllSubjects] = useState([]);
   const [allFaculty, setAllFaculty] = useState([]);
@@ -164,7 +167,12 @@ const TimetablePage = () => {
     setIsSubmitting(true);
     setNotification({ type: "", message: "" });
     try {
-      const res = await submitTimeTable(dataToInsert);
+      const res = await callWithRole(
+        role,
+        ["hod"],
+        createTimetable,
+        dataToInsert,
+      );
       if (res && res.success) {
         setNotification({
           type: "success",
@@ -175,8 +183,7 @@ const TimetablePage = () => {
         setNotification({
           type: "error",
           message:
-            res?.error ||
-            "Failed to save timetable configuration to database.",
+            res?.error || "Failed to save timetable configuration to database.",
         });
       }
     } catch (err) {
@@ -233,11 +240,16 @@ const TimetablePage = () => {
       }
       setLoading(true);
       try {
-        const facultyData = await fetchFaculty();
+        const facultyData = await callWithRole(role, ["hod"], getFaculty);
         if (facultyData?.data) setAllFaculty(facultyData.data);
-        const batchesData = await fetchBatches(sessionYear);
+        const batchesData = await callWithRole(
+          role,
+          ["hod"],
+          getBatchesForAllocation,
+          sessionYear,
+        );
         if (batchesData?.data) setAllBatches(batchesData.data);
-        const subjectsData = await fetchSubject();
+        const subjectsData = await callWithRole(role, ["hod"], getSubjects);
         if (subjectsData?.data) setAllSubjects(subjectsData.data);
       } catch (err) {
         console.error("Error loading dropdown options:", err);
@@ -251,7 +263,7 @@ const TimetablePage = () => {
       }
     }
     fetchData();
-  }, [sessionYear]);
+  }, [role, sessionYear]);
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen bg-gray-50 space-y-6">
@@ -499,7 +511,9 @@ const TimetablePage = () => {
                     <td className="p-2.5 border-r border-gray-200 align-top">
                       <select
                         value={row.batch_group || ""}
-                        onChange={(e) => updateRow(index, "batch_group", e.target.value)}
+                        onChange={(e) =>
+                          updateRow(index, "batch_group", e.target.value)
+                        }
                         className="w-full bg-white border border-gray-300 rounded-lg px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition font-medium text-gray-700"
                       >
                         <option value="">All</option>

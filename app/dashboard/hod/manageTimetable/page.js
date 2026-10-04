@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useSelector } from "react-redux";
 import Link from "next/link";
 import {
   fetchAllTimetables,
   updateTimetable,
   deleteTimetable,
-} from "@/app/action/manageTimetable";
+} from "@/app/action/timetable/timetableActions";
 import {
-  fetchBatches,
-  fetchFaculty,
-  fetchSubject,
-} from "@/app/action/fetchForFacultyAllocation";
+  getBatchesForAllocation,
+  getFaculty,
+} from "@/app/action/batches/getAllocationOptions";
 import {
   Pencil,
   Trash2,
@@ -30,6 +30,8 @@ import {
   BookOpen,
   Layers,
 } from "lucide-react";
+import { getSubjects } from "@/app/action/subjects/subjectActions";
+import { callWithRole } from "@/app/utlis/callWithRole";
 
 const DAYS_OF_WEEK = [
   { id: 1, name: "Monday", short: "Mon" },
@@ -42,6 +44,7 @@ const DAYS_OF_WEEK = [
 ];
 
 const ManageTimetablePage = () => {
+  const role = useSelector((state) => state.user.role);
   const [timetables, setTimetables] = useState([]);
   const [allFaculty, setAllFaculty] = useState([]);
   const [allBatches, setAllBatches] = useState([]);
@@ -88,7 +91,8 @@ const ManageTimetablePage = () => {
     if (typeof window !== "undefined" && !window.navigator.onLine) {
       setNotification({
         type: "error",
-        message: "Cannot refresh timetable records: No internet connection detected.",
+        message:
+          "Cannot refresh timetable records: No internet connection detected.",
       });
       return;
     }
@@ -97,10 +101,10 @@ const ManageTimetablePage = () => {
 
     try {
       const [tableRes, facRes, batchRes, subRes] = await Promise.all([
-        fetchAllTimetables(),
-        fetchFaculty(),
-        fetchBatches("ALL"),
-        fetchSubject(),
+        callWithRole(role, ["hod"], fetchAllTimetables),
+        callWithRole(role, ["hod"], getFaculty),
+        callWithRole(role, ["hod"], getBatchesForAllocation, "ALL"),
+        callWithRole(role, ["hod"], getSubjects),
       ]);
 
       if (facRes?.data) setAllFaculty(facRes.data);
@@ -113,7 +117,8 @@ const ManageTimetablePage = () => {
         setNotification({
           type: "error",
           message:
-            tableRes?.error || "Failed to load semester timetable from database.",
+            tableRes?.error ||
+            "Failed to load semester timetable from database.",
         });
       }
     } catch (error) {
@@ -135,7 +140,8 @@ const ManageTimetablePage = () => {
         if (isMounted) {
           setNotification({
             type: "error",
-            message: "Cannot load timetable records: No internet connection detected.",
+            message:
+              "Cannot load timetable records: No internet connection detected.",
           });
           setLoading(false);
         }
@@ -143,10 +149,10 @@ const ManageTimetablePage = () => {
       }
       try {
         const [tableRes, facRes, batchRes, subRes] = await Promise.all([
-          fetchAllTimetables(),
-          fetchFaculty(),
-          fetchBatches("ALL"),
-          fetchSubject(),
+          callWithRole(role, ["hod"], fetchAllTimetables),
+          callWithRole(role, ["hod"], getFaculty),
+          callWithRole(role, ["hod"], getBatchesForAllocation, "ALL"),
+          callWithRole(role, ["hod"], getSubjects),
         ]);
         if (!isMounted) return;
         if (facRes?.data) setAllFaculty(facRes.data);
@@ -159,7 +165,8 @@ const ManageTimetablePage = () => {
           setNotification({
             type: "error",
             message:
-              tableRes?.error || "Failed to load semester timetable from database.",
+              tableRes?.error ||
+              "Failed to load semester timetable from database.",
           });
         }
       } catch (error) {
@@ -178,7 +185,7 @@ const ManageTimetablePage = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [role]);
 
   const getFacultyName = (id) => {
     const found = allFaculty.find((f) => f.id === id || f.id === Number(id));
@@ -241,7 +248,8 @@ const ManageTimetablePage = () => {
     ) {
       setNotification({
         type: "error",
-        message: "Please fill in all fields (Batch, Subject, Faculty, Day, Period, and Room).",
+        message:
+          "Please fill in all fields (Batch, Subject, Faculty, Day, Period, and Room).",
       });
       return;
     }
@@ -292,7 +300,13 @@ const ManageTimetablePage = () => {
     setNotification({ type: "", message: "" });
 
     try {
-      const res = await updateTimetable(id, editForm);
+      const res = await callWithRole(
+        role,
+        ["hod"],
+        updateTimetable,
+        id,
+        editForm,
+      );
       if (res.success && res.data) {
         setTimetables((prev) =>
           prev.map((item) => (item.id === id ? res.data : item)),
@@ -341,7 +355,7 @@ const ManageTimetablePage = () => {
     setNotification({ type: "", message: "" });
 
     try {
-      const res = await deleteTimetable(id);
+      const res = await callWithRole(role, ["hod"], deleteTimetable, id);
       if (res.success) {
         setTimetables((prev) => prev.filter((item) => item.id !== id));
         if (editingId === id) setEditingId(null);
@@ -367,9 +381,19 @@ const ManageTimetablePage = () => {
   };
 
   const filteredTimetables = timetables.filter((item) => {
-    if (sessionYearFilter.trim() && sessionYearFilter.trim().toUpperCase() !== "ALL") {
-      const batch = allBatches.find((b) => b.id === item.batch_id || b.id === Number(item.batch_id));
-      if (!batch || !(batch.session_year || "").toLowerCase().includes(sessionYearFilter.trim().toLowerCase())) {
+    if (
+      sessionYearFilter.trim() &&
+      sessionYearFilter.trim().toUpperCase() !== "ALL"
+    ) {
+      const batch = allBatches.find(
+        (b) => b.id === item.batch_id || b.id === Number(item.batch_id),
+      );
+      if (
+        !batch ||
+        !(batch.session_year || "")
+          .toLowerCase()
+          .includes(sessionYearFilter.trim().toLowerCase())
+      ) {
         return false;
       }
     }
@@ -399,7 +423,8 @@ const ManageTimetablePage = () => {
             Manage Timetable Schedules
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Review, modify lecture timings, classrooms, or remove scheduled semester sessions
+            Review, modify lecture timings, classrooms, or remove scheduled
+            semester sessions
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -524,9 +549,7 @@ const ManageTimetablePage = () => {
                     <tr
                       key={row.id}
                       className={`transition-colors ${
-                        isEditing
-                          ? "bg-blue-50/30"
-                          : "hover:bg-gray-50/60"
+                        isEditing ? "bg-blue-50/30" : "hover:bg-gray-50/60"
                       }`}
                     >
                       {/* Day & Period column */}
@@ -550,7 +573,9 @@ const ManageTimetablePage = () => {
                               ))}
                             </select>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 font-semibold">Period:</span>
+                              <span className="text-xs text-gray-500 font-semibold">
+                                Period:
+                              </span>
                               <input
                                 type="number"
                                 min="1"
@@ -586,16 +611,32 @@ const ManageTimetablePage = () => {
                           <select
                             value={editForm.batch_id}
                             onChange={(e) =>
-                              setEditForm({ ...editForm, batch_id: e.target.value })
+                              setEditForm({
+                                ...editForm,
+                                batch_id: e.target.value,
+                              })
                             }
                             className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
                           >
                             <option value="">-- Select Batch --</option>
                             {allBatches
-                              .filter((batch) => !sessionYearFilter.trim() || sessionYearFilter.trim().toUpperCase() === "ALL" || (batch.session_year || "").toLowerCase().includes(sessionYearFilter.trim().toLowerCase()) || batch.id === row.batch_id)
+                              .filter(
+                                (batch) =>
+                                  !sessionYearFilter.trim() ||
+                                  sessionYearFilter.trim().toUpperCase() ===
+                                    "ALL" ||
+                                  (batch.session_year || "")
+                                    .toLowerCase()
+                                    .includes(
+                                      sessionYearFilter.trim().toLowerCase(),
+                                    ) ||
+                                  batch.id === row.batch_id,
+                              )
                               .map((batch) => (
                                 <option key={batch.id} value={batch.id}>
-                                  {batch.batch_code} [{batch.session_year || "N/A"}] {batch.branch ? `(${batch.branch})` : ""}
+                                  {batch.batch_code} [
+                                  {batch.session_year || "N/A"}]{" "}
+                                  {batch.branch ? `(${batch.branch})` : ""}
                                 </option>
                               ))}
                           </select>
@@ -624,13 +665,17 @@ const ManageTimetablePage = () => {
                               <option value="">-- Select Subject --</option>
                               {allSubjects.map((sub) => (
                                 <option key={sub.id} value={sub.id}>
-                                  {sub.subject_code ? `${sub.subject_code} - ` : ""}
+                                  {sub.subject_code
+                                    ? `${sub.subject_code} - `
+                                    : ""}
                                   {sub.subject_name}
                                 </option>
                               ))}
                             </select>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 font-semibold shrink-0">Room:</span>
+                              <span className="text-xs text-gray-500 font-semibold shrink-0">
+                                Room:
+                              </span>
                               <input
                                 type="text"
                                 placeholder="Room No. (e.g. 302-A)"
@@ -697,7 +742,10 @@ const ManageTimetablePage = () => {
                           <select
                             value={editForm.batch_group || ""}
                             onChange={(e) =>
-                              setEditForm({ ...editForm, batch_group: e.target.value })
+                              setEditForm({
+                                ...editForm,
+                                batch_group: e.target.value,
+                              })
                             }
                             className="p-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
                           >

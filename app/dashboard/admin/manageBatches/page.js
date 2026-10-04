@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { fetchBatches } from "@/app/action/fetchForFacultyAllocation";
-import { updateBatch, deleteBatch } from "@/app/action/updateBatch";
-import { fetchStudent } from "@/app/action/fetchStudent";
-import { fetchAllStudents } from "@/app/action/fetchAllStudents";
+import { useSelector } from "react-redux";
+import { getBatchesForAllocation } from "@/app/action/batches/getAllocationOptions";
+import { updateBatch, deleteBatch } from "@/app/action/batches/updateBatch";
+import { getBatchStudents } from "@/app/action/batches/getBatchStudents";
+import { getAllStudents } from "@/app/action/batches/getAllStudents";
 import {
-  submitStudentBatches,
+  saveStudentBatches,
   removeStudentFromBatch,
-} from "@/app/action/submitStudentBatches";
+} from "@/app/action/batches/manageStudentBatches";
+import { callWithRole } from "@/app/utlis/callWithRole";
 import SearchAbleDropdown from "@/app/component/SearchableDropdown";
 import {
   Pencil,
@@ -31,6 +33,7 @@ import {
 } from "lucide-react";
 
 const ManageBatchesPage = () => {
+  const role = useSelector((state) => state.user.role);
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sessionYearFilter, setSessionYearFilter] = useState("2025-2026");
@@ -75,7 +78,12 @@ const ManageBatchesPage = () => {
         const targetYear = sessionYearFilter.trim()
           ? sessionYearFilter.trim()
           : "ALL";
-        const res = await fetchBatches(targetYear);
+        const res = await callWithRole(
+          role,
+          ["admin"],
+          getBatchesForAllocation,
+          targetYear,
+        );
         if (!isMounted) return;
         if (res.success && res.data) {
           const sorted = orderBatches(res.data);
@@ -105,18 +113,18 @@ const ManageBatchesPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [sessionYearFilter, orderBatches]);
+  }, [sessionYearFilter, orderBatches, role]);
 
   // Load all students once for enrollment suggestions
   useEffect(() => {
     async function loadAllStudents() {
-      const res = await fetchAllStudents();
+      const res = await callWithRole(role, ["admin"], getAllStudents);
       if (res.success && res.data) {
         setAllStudents(res.data);
       }
     }
     loadAllStudents();
-  }, []);
+  }, [role]);
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -126,7 +134,12 @@ const ManageBatchesPage = () => {
       const targetYear = sessionYearFilter.trim()
         ? sessionYearFilter.trim()
         : "ALL";
-      const res = await fetchBatches(targetYear);
+      const res = await callWithRole(
+        role,
+        ["admin"],
+        getBatchesForAllocation,
+        targetYear,
+      );
       if (res.success && res.data) {
         const sorted = orderBatches(res.data);
         setBatches(sorted);
@@ -188,7 +201,13 @@ const ManageBatchesPage = () => {
     setActionLoading(id);
     setNotification({ type: "", message: "" });
     try {
-      const res = await updateBatch(id, editForm);
+      const res = await callWithRole(
+        role,
+        ["admin"],
+        updateBatch,
+        id,
+        editForm,
+      );
       if (res.success && res.data) {
         setNotification({
           type: "success",
@@ -228,7 +247,7 @@ const ManageBatchesPage = () => {
 
     setActionLoading(id);
     try {
-      const res = await deleteBatch(id);
+      const res = await callWithRole(role, ["admin"], deleteBatch, id);
       if (res.success) {
         setNotification({
           type: "success",
@@ -260,7 +279,12 @@ const ManageBatchesPage = () => {
     setDataToInsert([]);
     setStudentSearchQuery("");
     try {
-      const res = await fetchStudent(batch.id);
+      const res = await callWithRole(
+        role,
+        ["admin"],
+        getBatchStudents,
+        batch.id,
+      );
       if (res.success && res.data) {
         setAssignedStudents(res.data);
       } else {
@@ -395,7 +419,12 @@ const ManageBatchesPage = () => {
         batch_group: item.batch_group || null,
       }));
 
-      const result = await submitStudentBatches(payload);
+      const result = await callWithRole(
+        role,
+        ["admin"],
+        saveStudentBatches,
+        payload,
+      );
       setIsSubmittingStudents(false);
 
       if (result.success) {
@@ -406,7 +435,12 @@ const ManageBatchesPage = () => {
         setDataToInsert([]);
         setStudentModalTab("list");
         setStudentsLoading(true);
-        const res = await fetchStudent(selectedBatchForStudents.id);
+        const res = await callWithRole(
+          role,
+          ["admin"],
+          getBatchStudents,
+          selectedBatchForStudents.id,
+        );
         if (res.success && res.data) {
           setAssignedStudents(res.data);
         }
@@ -440,7 +474,10 @@ const ManageBatchesPage = () => {
 
     setActionLoading(`remove-${studentId}`);
     try {
-      const res = await removeStudentFromBatch(
+      const res = await callWithRole(
+        role,
+        ["admin"],
+        removeStudentFromBatch,
         studentId,
         selectedBatchForStudents.id,
       );
@@ -1290,7 +1327,11 @@ const ManageBatchesPage = () => {
                                 <select
                                   value={row.batch_group || ""}
                                   onChange={(e) =>
-                                    updateStudentRow(index, "batch_group", e.target.value)
+                                    updateStudentRow(
+                                      index,
+                                      "batch_group",
+                                      e.target.value,
+                                    )
                                   }
                                   className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition font-medium text-gray-700"
                                 >

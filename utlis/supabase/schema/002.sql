@@ -83,7 +83,7 @@ CREATE TABLE faculty_allocations (
     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT current_timestamp,
     -- Prevent duplicate assignments of the same teacher to the exact same batch & subject
-    UNIQUE(faculty_id, batch_id, subject_id) 
+    UNIQUE(faculty_id, batch_id, subject_id)
 );
 
 -- 3. Timetable Master Table
@@ -98,7 +98,6 @@ CREATE TABLE timetable_master (
     room_no VARCHAR,
     created_at TIMESTAMP DEFAULT current_timestamp,
 );
-// set id of timetabelmaster to 1
 ALTER SEQUENCE timetable_master_id_seq RESTART WITH 1;
 -- insert into timetable_master(batch_id,subject_id,faculty_id,day_of_week,period_number,room_no)
 -- values
@@ -216,3 +215,8 @@ SELECT cron.schedule(
     ); 
   $$
 );
+
+
+
+-- call the corn job manually for testing
+-- SELECT cron.run_job('generate-weekly-sessions-job');
