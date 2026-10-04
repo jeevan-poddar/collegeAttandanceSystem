@@ -10,6 +10,7 @@ export async function fetchClassSession() {
     const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
     const supabase = await createClient();
     const user = await getUser(["faculty", "hod"]);
+    console.log("time:", new Date());
 
     if (!user?.id) {
       return {
