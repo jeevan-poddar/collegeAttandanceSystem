@@ -6,6 +6,11 @@ const Home = () => {
   const userRedux = useSelector((state) => state.user);
 
   const renderRoleMessage = () => {
+    console.log({
+      iso: new Date().toISOString(),
+      serverDate: new Date().toString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
     if (userRedux?.role === "faculty") {
       return "You are logged in as a faculty member.";
     } else if (userRedux?.role === "student") {
