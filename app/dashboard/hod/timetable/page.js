@@ -280,8 +280,8 @@ const TimetablePage = () => {
           <form onSubmit={(e) => e.preventDefault()}>
             <input
               type="text"
-              defaultValue={"2025-2026"}
-              placeholder="Session Year (e.g. 2025-2026)"
+              defaultValue={"2026-2027"}
+              placeholder="Session Year (e.g. 2026-2027)"
               className="px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
               {...register("sessionYear")}
             />

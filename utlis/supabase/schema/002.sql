@@ -218,5 +218,6 @@ SELECT cron.schedule(
 
 
 
--- call the corn job manually for testing
--- SELECT cron.run_job('generate-weekly-sessions-job');
+
+-- Run the same session-generation logic immediately for a manual test:
+SELECT generate_weekly_sessions(CURRENT_DATE, CURRENT_DATE + INTEGER '6');

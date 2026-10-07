@@ -36,7 +36,7 @@ const ManageBatchesPage = () => {
   const role = useSelector((state) => state.user.role);
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sessionYearFilter, setSessionYearFilter] = useState("2025-2026");
+  const [sessionYearFilter, setSessionYearFilter] = useState("2026-2027");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -638,7 +638,7 @@ const ManageBatchesPage = () => {
                 type="text"
                 value={sessionYearFilter}
                 onChange={(e) => setSessionYearFilter(e.target.value)}
-                placeholder="e.g. 2025-2026 (or leave empty for all)"
+                placeholder="e.g. 2026-2027 (or leave empty for all)"
                 className="border border-gray-300 rounded-xl pl-10 pr-4 py-2 w-full text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-xs"
               />
             </div>
@@ -765,7 +765,7 @@ const ManageBatchesPage = () => {
                             }
                             onClick={(e) => e.stopPropagation()}
                             className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs"
-                            placeholder="2025-2026"
+                            placeholder="2026-2027"
                           />
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">

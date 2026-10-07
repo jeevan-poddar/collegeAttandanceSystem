@@ -48,15 +48,19 @@ const SearchAbleDropdown = ({
   const handleSelectOption = (option) => {
     setShowDrop(false);
     setValue("search", option[searchFor[0]] || "");
-    const insertKey = Object.keys(insert)[0];
-    const insertValueField = Object.values(insert)[0];
-    updateRow(index, insertKey, option[insertValueField]);
+
+    // Apply every target/source mapping when an option is selected.
+    Object.entries(insert).forEach(([targetField, sourceField]) => {
+      updateRow(index, targetField, option[sourceField]);
+    });
   };
 
   const handleInputChange = (e) => {
     if (mode === "custom" || mode === "both") {
-      const insertKey = Object.keys(insert)[0];
-      updateRow(index, insertKey, e.target.value);
+      const primaryField = Object.keys(insert)[0];
+      if (primaryField) {
+        updateRow(index, primaryField, e.target.value);
+      }
     }
     if (mode === "option" || mode === "both") {
       setShowDrop(true);
@@ -82,12 +86,12 @@ const SearchAbleDropdown = ({
         />
       </form>
       {showDrop && (
-        <div className="absolute z-50 left-0 min-w-60 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-xl divide-y divide-gray-100">
+        <div className="absolute z-50 left-0 min-w-60 w-fit mt-1 max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-xl divide-y divide-gray-100">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((option, idx) => (
               <div
                 key={idx}
-                className="px-3.5 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer transition-colors select-none"
+                className="px-3.5 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer transition-colors select-none w-full"
                 onClick={() => handleSelectOption(option)}
               >
                 {searchFor

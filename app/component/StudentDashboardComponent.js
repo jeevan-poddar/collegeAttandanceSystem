@@ -39,7 +39,7 @@ const StudentDashboardComponent = ({
   const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [sessionYearFilter, setSessionYearFilter] = useState("2025-2026");
+  const [sessionYearFilter, setSessionYearFilter] = useState("2026-2027");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBatch, setSelectedBatch] = useState(null);
 
@@ -95,11 +95,11 @@ const StudentDashboardComponent = ({
       const response = studentId
         ? await callWithRole(
             role,
-            ["admin", "hod"],
+            ["admin", "hod", "faculty"],
             getStudentDashboardById,
             studentId,
           )
-        : await callWithRole(role, ["student"], getStudentDashboard);
+        : await callWithRole(role, ["student", "admin", "hod", "faculty"], getStudentDashboard);
 
       if (response.success && response.data) {
         setStudent(response.data.student);
@@ -142,11 +142,11 @@ const StudentDashboardComponent = ({
         const response = studentId
           ? await callWithRole(
               role,
-              ["admin", "hod"],
+              ["admin", "hod", "faculty"],
               getStudentDashboardById,
               studentId,
             )
-          : await callWithRole(role, ["student"], getStudentDashboard);
+          : await callWithRole(role, ["student", "admin", "hod", "faculty"], getStudentDashboard);
 
         if (!isMounted) return;
         if (response.success && response.data) {
@@ -226,7 +226,7 @@ const StudentDashboardComponent = ({
 
       const sessionResponse = await callWithRole(
         role,
-        ["student", "hod", "admin"],
+        ["student", "hod", "admin", "faculty"],
         fetchAttendanceSessions,
         targetBatchId,
         targetSubjectId,
@@ -239,7 +239,7 @@ const StudentDashboardComponent = ({
 
       const attendanceResponse = await callWithRole(
         role,
-        ["student", "hod", "admin"],
+        ["student", "hod", "admin", "faculty"],
         fetchOverallAttendance,
         targetBatchId,
         sessionIds,
@@ -374,7 +374,7 @@ const StudentDashboardComponent = ({
                     <Calendar className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Session year (2025-2026)..."
+                      placeholder="Session year (2026-2027)..."
                       value={sessionYearFilter}
                       onChange={(e) => setSessionYearFilter(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50/50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition font-semibold text-gray-800"

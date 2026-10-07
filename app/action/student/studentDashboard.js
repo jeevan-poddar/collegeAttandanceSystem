@@ -107,7 +107,7 @@ async function getBatchesAndAllocationsForStudent(supabase, student) {
 export async function getStudentDashboard() {
   try {
     const supabase = await createClient();
-    const user = await getUser(["student"]);
+    const user = await getUser(["student", "admin", "hod", "faculty"]);
 
     if (!user) {
       return {
