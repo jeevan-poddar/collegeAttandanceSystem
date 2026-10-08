@@ -109,23 +109,32 @@ const AssignRolePage = () => {
   // Required actions for this page:
   // add row, remove row, update row, and submit the prepared role rows.
   const addRow = () => {
-    setDataToInsert((prev) => [
-      ...prev,
-      {
-        role: role,
-        user_id: "",
-        email: "",
-        phone: 0,
-        name: "",
-        department_id:
-          Number(dataToInsert[dataToInsert.length - 1]?.department_id) || 0,
-        cRollNo:
-          Number(dataToInsert[dataToInsert.length - 1]?.cRollNo) + 1 || 1, // Auto-incrementing C Roll No. for new rows
-        parentName: "",
-        parentPhone: 0,
-        sessionYear: dataToInsert[dataToInsert.length - 1]?.sessionYear || "2026-2027",
-      },
-    ]);
+    setDataToInsert((prev) => {
+      const lastRow = prev[prev.length - 1];
+
+      return [
+        ...prev,
+        {
+          role,
+          user_id: "",
+          email: "",
+          phone: 0,
+          name: "",
+          department_id: Number(lastRow?.department_id) || 0,
+          cRollNo: Number(lastRow?.cRollNo) + 1 || 1,
+          parentName: "",
+          parentPhone: 0,
+          sessionYear: lastRow?.sessionYear || "2026-2027",
+        },
+      ];
+    });
+  };
+
+  const handleRoleChange = (nextRole) => {
+    setRole(nextRole);
+    setDataToInsert((prev) =>
+      prev.map((row) => ({ ...row, role: nextRole })),
+    );
   };
 
   const removeRow = (index) => {
@@ -224,7 +233,7 @@ const AssignRolePage = () => {
             <span>Select Role</span>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onChange={(e) => handleRoleChange(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="admin">Admin</option>

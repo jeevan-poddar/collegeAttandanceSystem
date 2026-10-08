@@ -78,14 +78,16 @@ const SideBar = () => {
             </li>
           )}
           {showAdmin && (
-            <li>
-              <Link
-                href="/dashboard/admin"
-                className="flex items-center px-3.5 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors"
-              >
-                Dashboard Admin
-              </Link>
-            </li>
+            <>
+              <li>
+                <Link
+                  href="/dashboard/admin"
+                  className="flex items-center px-3.5 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                >
+                  Dashboard Admin
+                </Link>
+              </li>
+            </>
           )}
         </ul>
       </nav>

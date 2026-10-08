@@ -66,6 +66,29 @@ const page = () => {
             fields.
           </p>
         </Link>
+        <Link
+          href="/dashboard/admin/manageRoles"
+          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
+        >
+          <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+            Manage Roles
+          </h2>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            View, edit, and revoke assigned user roles. Search users by name or
+            email and update role-specific details.
+          </p>
+        </Link>
+        <Link
+          href="/dashboard/admin/departments"
+          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
+        >
+          <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+            Manage Departments
+          </h2>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Add new departments, update their details, and manage the list of academic departments.
+          </p>
+        </Link>
       </div>
     </div>
   );

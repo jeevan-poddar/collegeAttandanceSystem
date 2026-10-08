@@ -23,3 +23,15 @@ create table hod (
     user_id uuid references users(id),
     department_id int references departments(id)
 );
+
+ALTER table faculty
+drop column department;
+ALTER table faculty
+add column department_id int not null references departments(id);
+
+Alter tabel hod
+add column email varchar not null unique;
+Alter tabel hod
+add column name varchar not null;
+Alter tabel hod
+add column phone numeric(10, 0) unique not null;

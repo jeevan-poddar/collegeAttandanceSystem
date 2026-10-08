@@ -17,7 +17,8 @@ async function getBatchesAndAllocationsForStudent(supabase, student) {
       )
     `,
     )
-    .eq("student_id", student.id);
+    .eq("student_id", student.id)
+    .order("batches.batch_code", { ascending: true });
 
   if (enrollError) {
     return {

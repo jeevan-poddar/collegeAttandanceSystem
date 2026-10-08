@@ -41,7 +41,8 @@ export async function fetchBatches() {
         subjects ( id, subject_name, subject_code )
       `,
       )
-      .eq("faculty_id", facultyId);
+      .eq("faculty_id", facultyId)
+      .order("batches.batch_code", { ascending: true });
     if (error) throw error;
 
     // 3. Format the data for the frontend

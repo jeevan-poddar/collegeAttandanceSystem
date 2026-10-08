@@ -56,12 +56,28 @@ const SearchAbleDropdown = ({
   };
 
   const handleInputChange = (e) => {
-    if (mode === "custom" || mode === "both") {
-      const primaryField = Object.keys(insert)[0];
-      if (primaryField) {
-        updateRow(index, primaryField, e.target.value);
+    const val = e.target.value;
+    
+    // Always update the primary field with the typed value
+    const primaryField = Object.keys(insert)[0];
+    if (primaryField) {
+      updateRow(index, primaryField, val);
+    }
+    
+    if (mode === "option") {
+      const exactMatch = options.find((opt) =>
+        searchFor.some(
+          (title) => String(opt[title] || "").toLowerCase() === val.toLowerCase()
+        )
+      );
+      
+      if (exactMatch) {
+        Object.entries(insert).forEach(([targetField, sourceField]) => {
+          updateRow(index, targetField, exactMatch[sourceField]);
+        });
       }
     }
+
     if (mode === "option" || mode === "both") {
       setShowDrop(true);
     }
