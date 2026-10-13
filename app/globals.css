@@ -63,27 +63,21 @@
   .min-h-screen { min-height: auto; }
 }
 
-.qr-reader video {
+.scanner-reader video {
   width: 100% !important;
+  height: 100% !important;
   border-radius: 0.75rem;
-  object-fit: cover;
+  object-fit: cover !important;
 }
 
-.qr-reader #html5-qrcode-button-camera-permission,
-.qr-reader #html5-qrcode-button-camera-start,
-.qr-reader #html5-qrcode-button-camera-stop {
-  margin: 0.75rem auto 0 !important;
-  border: 0 !important;
-  border-radius: 0.75rem !important;
-  background: #2563eb !important;
-  padding: 0.625rem 1rem !important;
-  color: #fff !important;
-  font-size: 0.875rem !important;
-  font-weight: 700 !important;
+.scanner-reader > div,
+.scanner-reader > div > div {
+  width: 100% !important;
+  height: 100% !important;
 }
 
-.qr-reader select {
-  max-width: 100%;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
+/* html5-qrcode adds a white scan-box overlay by default. The page supplies
+   its own dark camera frame, so the library overlay is intentionally hidden. */
+.scanner-reader #qr-shaded-region {
+  display: none !important;
 }

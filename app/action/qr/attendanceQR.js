@@ -34,14 +34,17 @@ export async function generateAttendanceToken(sessionId) {
         .eq("actual_faculty_id", faculty.id)
         .single();
       if (sessionError || !session) {
-        return { success: false, error: "You are not allowed to generate a QR code for this session." };
+        return {
+          success: false,
+          error: "You are not allowed to generate a QR code for this session.",
+        };
       }
     }
 
     // 1. Create the payload with the current timestamp (crucial for freshness check!)
     const payload = {
-      sessionId: normalizedSessionId,
-      timestamp: Date.now(),
+      s: normalizedSessionId,
+      t: Date.now(),
     };
 
     // 2. Encrypt it using NaCl
@@ -61,13 +64,6 @@ export async function generateAttendanceToken(sessionId) {
     return { success: false, error: "Failed to generate security token" };
   }
 }
-
-
-
-
-
-
-
 
 export async function verifyAndMarkAttendance(encryptedToken) {
   try {
@@ -100,6 +96,7 @@ export async function verifyAndMarkAttendance(encryptedToken) {
     const messageString = new TextDecoder().decode(decryptedBytes);
     const payload = JSON.parse(messageString);
     const { sessionId, timestamp } = payload;
+    // console.log("Decrypted payload:", payload);
 
     // 3. FRESHNESS CHECK (Anti-WhatsApp Attack)
     const ageInMs = Date.now() - timestamp;
@@ -111,17 +108,25 @@ export async function verifyAndMarkAttendance(encryptedToken) {
         error: "QR code has expired! Please scan the live code on screen.",
       };
     }
+    console.log("Data to insert into attendance table:", {
+      class_session_id: sessionId,
+      student_id: student.id,
+    });
 
     // 4. INSERT PENDING ATTENDANCE INTO SUPABASE
     const { error: insertError } = await supabase.from("attendance").insert({
       class_session_id: sessionId,
       student_id: student.id,
-      status: "present", // Waiting for the teacher to accept!
-      marked_by: null, // Will be updated when the teacher accepts
-      is_verified: false, // New column to track verification status
     });
 
     if (insertError) {
+      console.error("Failed to insert QR attendance:", {
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+      });
+
       // Catch duplicate scans (Unique constraint on class_session_id + student_id)
       if (insertError.code === "23505") {
         return {
@@ -129,7 +134,10 @@ export async function verifyAndMarkAttendance(encryptedToken) {
           error: "You have already submitted attendance for this class.",
         };
       }
-      return { success: false, error: "Database error saving attendance." };
+      return {
+        success: false,
+        error: `Database error saving attendance: ${insertError.message}`,
+      };
     }
 
     return {
