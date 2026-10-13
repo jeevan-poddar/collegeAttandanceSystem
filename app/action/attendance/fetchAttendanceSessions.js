@@ -9,14 +9,14 @@ export async function fetchAttendanceSessions(
   batchGroup = null,
 ) {
   try {
-    console.log(
-      "Fetching sessions for attendance with batchId:",
-      batchId,
-      "subjectId:",
-      subjectId,
-      "batchGroup:",
-      batchGroup,
-    );
+    // console.log(
+    //   "Fetching sessions for attendance with batchId:",
+    //   batchId,
+    //   "subjectId:",
+    //   subjectId,
+    //   "batchGroup:",
+    //   batchGroup,
+    // );
     const supabase = await createClient();
     const auth = await getAuthClaims(supabase, [
       "student",
@@ -57,7 +57,7 @@ export async function fetchAttendanceSessions(
       });
     }
 
-    console.log("Fetched sessions for attendance:", filteredSessions.length);
+    // console.log("Fetched sessions for attendance:", filteredSessions.length);
     return { success: true, data: filteredSessions };
   } catch (error) {
     console.error("Error fetching sessions for attendance:", error.message);

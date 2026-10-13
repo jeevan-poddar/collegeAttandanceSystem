@@ -5,7 +5,7 @@ import { getUserFriendlyError } from "@/utlis/errorTranslator";
 import { getAuthClaims } from "../auth/getAuthClaims";
 
 export async function createFacultyAllocations(data) {
-  console.log("Data to insert:", data);
+  // console.log("Data to insert:", data);
   if (!Array.isArray(data) || data.length === 0) {
     return {
       success: false,
@@ -30,7 +30,7 @@ export async function createFacultyAllocations(data) {
         ),
       };
     }
-    console.log("Faculty allocation data inserted successfully");
+    // console.log("Faculty allocation data inserted successfully");
     return {
       success: true,
       message: "Faculty allocations saved successfully.",

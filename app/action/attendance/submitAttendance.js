@@ -42,7 +42,7 @@ export async function submitAttendance(attendanceData) {
     console.error("Error fetching faculty details:", error);
     return;
   }
-  console.log("Faculty Details:", facultyDetails); // Log the faculty details to verify it's being retrieved correctly
+  // console.log("Faculty Details:", facultyDetails); // Log the faculty details to verify it's being retrieved correctly
   const facultyId = facultyDetails.id;
   const recordToSubmit = attendanceData.map((student) => ({
     ...student,
@@ -83,6 +83,6 @@ export async function submitAttendance(attendanceData) {
     };
   }
 
-  console.log("Attendance records submitted successfully.");
+  // console.log("Attendance records submitted successfully.");
   return { success: true, message: "Attendance submitted successfully." };
 }

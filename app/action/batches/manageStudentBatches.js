@@ -5,7 +5,7 @@ import { getUserFriendlyError } from "@/utlis/errorTranslator";
 import { getAuthClaims } from "../auth/getAuthClaims";
 
 export async function saveStudentBatches(data) {
-  console.log("Submitting student_batches data:", data);
+  // console.log("Submitting student_batches data:", data);
   try {
     const supabase = await createClient();
     const auth = await getAuthClaims(supabase, ["admin", "hod"]);
@@ -24,7 +24,7 @@ export async function saveStudentBatches(data) {
       };
     }
 
-    console.log("Student batch assignments inserted successfully");
+    // console.log("Student batch assignments inserted successfully");
     return {
       success: true,
       message: "Students assigned to batch successfully.",

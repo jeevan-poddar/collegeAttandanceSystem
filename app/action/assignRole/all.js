@@ -17,7 +17,7 @@ export async function fetchDepartments() {
     if (error) {
       throw new Error("Error fetching departments: " + error.message);
     }
-    console.log("Fetched departments:", data);
+    // console.log("Fetched departments:", data);
     return { success: true, departments: data };
   } catch (error) {
     console.error("Error fetching departments:", error.message);
@@ -44,7 +44,7 @@ export async function fetchUnkownUsers(duration) {
       throw new Error("Error fetching unknown users: " + error.message);
     }
 
-    console.log("Fetched unknown users:", data);
+    // console.log("Fetched unknown users:", data);
     return { success: true, unknownUsers: data };
   } catch (error) {
     console.error("Error fetching unknown users:", error.message);
@@ -62,7 +62,7 @@ export async function submitStudentAndUpdateUserRole(data = []) {
     const userId = data.map((item) => item.user_id);
 
     const roleData = data[0]?.role;
-    console.log("Role data:", roleData);
+    // console.log("Role data:", roleData);
 
     if (!roleData) {
       throw new Error("Role data is missing in the input.");
@@ -116,7 +116,7 @@ export async function submitStudentAndUpdateUserRole(data = []) {
         phone: item.phone,
         department_id: item.department_id,
       }));
-      console.log("HOD data to insert:", dataToInsert);
+      // console.log("HOD data to insert:", dataToInsert);
       const { error: insertError } = await supabase
         .from("hod")
         .insert(dataToInsert);

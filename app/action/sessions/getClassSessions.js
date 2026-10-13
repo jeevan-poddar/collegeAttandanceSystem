@@ -10,7 +10,7 @@ export async function getClassSessions() {
     const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
     const supabase = await createClient();
     const user = await getUser(["faculty", "hod"]);
-    console.log("time:", new Date());
+    // console.log("time:", new Date());
 
     if (!user?.id) {
       return {
@@ -66,6 +66,7 @@ export async function getClassSessions() {
       )
       .gte("session_date", startDate.toISOString()) // Good practice to format dates to ISO
       .lte("session_date", endDate.toISOString())
+      .eq("attendance.is_verified", true)
       .order("session_date", { ascending: true })
       .order("timetable_master_id", { ascending: true })
       .or(orQuery); // Use our safe, single-table OR query

@@ -12,7 +12,7 @@ export async function fetchClassSession() {
     const endDateValue = format(endDate, "yyyy-MM-dd");
     const supabase = await createClient();
     const user = await getUser(["faculty", "hod"]);
-    console.log("time:", new Date());
+    // console.log("time:", new Date());
 
     if (!user?.id) {
       return {
@@ -68,6 +68,7 @@ export async function fetchClassSession() {
       )
       .gte("session_date", startDateValue)
       .lte("session_date", endDateValue)
+      .eq("attendance.is_verified", true)
       .order("session_date", { ascending: true })
       .order("timetable_master_id", { ascending: true })
       .or(orQuery); // Use our safe, single-table OR query
@@ -114,7 +115,7 @@ export async function fetchClassSession() {
       const rightDate = new Date(right.session_date).getTime();
       return leftDate - rightDate || left.period - right.period;
     });
-    console.log("Formatted Sessions:", formattedSessions);
+    // console.log("Formatted Sessions:", formattedSessions);
     return formattedSessions;
   } catch (error) {
     console.error("Error fetching class sessions:", error.message);

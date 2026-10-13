@@ -5,7 +5,7 @@ import { getUserFriendlyError } from "@/utlis/errorTranslator";
 import { getAuthClaims } from "../auth/getAuthClaims";
 
 export async function createSubjects(data) {
-  console.log("Data to insert:", data);
+  // console.log("Data to insert:", data);
   if (!Array.isArray(data) || data.length === 0) {
     return {
       success: false,
@@ -25,7 +25,7 @@ export async function createSubjects(data) {
         error: getUserFriendlyError(error, "Failed to submit subjects."),
       };
     }
-    console.log("Subjects submitted successfully");
+    // console.log("Subjects submitted successfully");
     return { success: true };
   } catch (error) {
     console.error("Error submitting subject:", error);

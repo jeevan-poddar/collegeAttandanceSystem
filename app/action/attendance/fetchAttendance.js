@@ -12,17 +12,18 @@ export async function fetchAttendance(sessionId) {
       };
     }
 
-    console.log("Fetching attendance for session ID:", sessionId);
+    // console.log("Fetching attendance for session ID:", sessionId);
     const supabase = await createClient();
     const auth = await getAuthClaims(supabase, ["faculty", "hod", "admin"]);
     if (!auth.success) return auth;
 
     const { data, error } = await supabase
       .from("attendance")
-      .select("student_id, status")
-      .eq("class_session_id", sessionId);
+      .select("student_id, status, is_verified")
+      .eq("class_session_id", sessionId)
+      .eq("is_verified", true);
 
-    console.log("Fetched Attendance Data:", data);
+    // console.log("Fetched Attendance Data:", data);
 
     if (error) {
       console.error("Attendance fetch error:", error);

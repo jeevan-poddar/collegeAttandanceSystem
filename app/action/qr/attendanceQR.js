@@ -96,8 +96,8 @@ export async function verifyAndMarkAttendance(encryptedToken) {
     const messageString = new TextDecoder().decode(decryptedBytes);
     const payload = JSON.parse(messageString);
     const { s, t } = payload;
-    console.log("Decrypted payload:", payload);
-    console.log("sessionId:", s, "timestamp:", t);
+    // console.log("Decrypted payload:", payload);
+    // console.log("sessionId:", s, "timestamp:", t);
 
     // 3. FRESHNESS CHECK (Anti-WhatsApp Attack)
     const ageInMs = Date.now() - t;
@@ -109,10 +109,10 @@ export async function verifyAndMarkAttendance(encryptedToken) {
         error: "QR code has expired! Please scan the live code on screen.",
       };
     }
-    console.log("Data to insert into attendance table:", {
-      class_session_id: s,
-      student_id: student.id,
-    });
+    // console.log("Data to insert into attendance table:", {
+    //   class_session_id: s,
+    //   student_id: student.id,
+    // });
 
     // 4. INSERT PENDING ATTENDANCE INTO SUPABASE
     const { error: insertError } = await supabase.from("attendance").insert({

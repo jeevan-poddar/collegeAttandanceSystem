@@ -27,9 +27,10 @@ export async function fetchOverallAttendance(batchId, sessionIds, studentIds) {
 
     const { data: attendanceData, error } = await supabase
       .from("attendance")
-      .select("class_session_id, student_id, status")
+      .select("class_session_id, student_id, status, is_verified")
       .in("class_session_id", sessionIds)
-      .in("student_id", studentIds);
+      .in("student_id", studentIds)
+      .eq("is_verified", true);
 
     if (error) {
       console.error("Error fetching attendance for overall:", error.message);

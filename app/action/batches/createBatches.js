@@ -26,7 +26,7 @@ export async function createBatches(data) {
       error: "Every batch must be assigned to a valid department.",
     };
   }
-  console.log("Formatted Data:", formatData);
+  // console.log("Formatted Data:", formatData);
 
   try {
     const supabase = await createClient();
@@ -44,7 +44,7 @@ export async function createBatches(data) {
         ),
       };
     }
-    console.log("Batches submitted successfully");
+    // console.log("Batches submitted successfully");
     return { success: true, message: "Batches registered successfully." };
   } catch (error) {
     console.error("Error submitting batches:", error);
