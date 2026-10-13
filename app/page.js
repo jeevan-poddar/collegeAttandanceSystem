@@ -21,8 +21,8 @@ const Home = () => {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto flex items-center justify-center min-h-[50vh]">
-      <div className="w-full bg-white border border-gray-200 rounded-xl p-8 shadow-sm text-center space-y-3">
+    <div className="page-shell max-w-4xl flex items-center justify-center min-h-[50vh]">
+      <div className="minimal-card w-full p-6 sm:p-8 text-center space-y-3">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
           Welcome,{" "}
           <span className="text-blue-600">{userRedux?.userName || "User"}</span>

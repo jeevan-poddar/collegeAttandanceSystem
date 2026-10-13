@@ -26,6 +26,7 @@ const FacultyDashboardPage = () => {
   const [notification, setNotification] = useState({ type: "", message: "" });
   const [showQR, setShowQR] = useState(false);
   const [qrValue, setQrValue] = useState("");
+  const [attendanceMode, setAttendanceMode] = useState("manual");
 
   useEffect(() => {
     const handleOffline = () => {
@@ -465,16 +466,6 @@ const FacultyDashboardPage = () => {
                   setSessionDesOn={setSessionDesOn}
                   setActiveClass={setActiveClass}
                 />
-                <AttendanceApprovalPanel
-                  sessionId={selectedSession.id}
-                  role={role}
-                  onChange={(result) =>
-                    setNotification({
-                      type: "success",
-                      message: `${result.count} attendance submission(s) processed.`,
-                    })
-                  }
-                />
               </div>
             )}
           </div>
@@ -514,6 +505,7 @@ const FacultyDashboardPage = () => {
                   setSessionDesOn(false);
                   setAttendance({});
                   setStudents([]);
+                  setAttendanceMode("manual");
                 }}
                 className="bg-blue-700/50 hover:bg-blue-700 border border-blue-400/30 text-blue-100 hover:text-white px-3.5 py-1.5 rounded-lg text-sm font-medium transition shrink-0 shadow-sm"
               >
@@ -521,24 +513,21 @@ const FacultyDashboardPage = () => {
               </button>
             </div>
 
-            {/* Student List */}
+            {/* Attendance controls and content */}
             <div className="flex-1 overflow-y-auto p-5">
-              <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-200 px-1">
-                <div className="flex items-center space-x-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  <span className="w-20 text-left shrink-0">C Roll No</span>
-                  <span className="w-20 text-left shrink-0">U Roll No</span>
-                  <span>Full Name</span>
-                </div>
-                <button
-                  onClick={() => {
-                    students.forEach((student) => {
-                      markStudent(student.id, "present");
-                    });
-                  }}
-                  className="bg-blue-500 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-blue-600 transition shrink-0 shadow-sm"
-                >
-                  Mark all Present
-                </button>
+              <div className="mb-3 flex flex-wrap items-center justify-end gap-2 border-b border-gray-200 pb-3 px-1">
+                {attendanceMode === "manual" && (
+                  <button
+                    onClick={() => {
+                      students.forEach((student) => {
+                        markStudent(student.id, "present");
+                      });
+                    }}
+                    className="bg-blue-500 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-blue-600 transition shrink-0 shadow-sm"
+                  >
+                    Mark all Present
+                  </button>
+                )}
                 <button
                   onClick={async () => {
                     const token = await callWithRole(
@@ -561,18 +550,53 @@ const FacultyDashboardPage = () => {
                 >
                   Generate QR Code
                 </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAttendanceMode((mode) =>
+                      mode === "approval" ? "manual" : "approval",
+                    )
+                  }
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition shrink-0 shadow-sm ${
+                    attendanceMode === "approval"
+                      ? "bg-slate-700 text-white hover:bg-slate-800"
+                      : "bg-emerald-600 text-white hover:bg-emerald-700"
+                  }`}
+                >
+                  {attendanceMode === "approval"
+                    ? "Mark Manually"
+                    : "Approve Pending"}
+                </button>
               </div>
 
-              <div className="divide-y divide-gray-100">
-                {studentsLoading ? (
+              {attendanceMode === "approval" ? (
+                <AttendanceApprovalPanel
+                  sessionId={activeClass.id}
+                  role={role}
+                  onChange={(result) =>
+                    setNotification({
+                      type: "success",
+                      message: `${result.count} attendance submission(s) processed.`,
+                    })
+                  }
+                />
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    <span className="w-20 text-left shrink-0">C Roll No</span>
+                    <span className="w-20 text-left shrink-0">U Roll No</span>
+                    <span>Full Name</span>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {studentsLoading ? (
                   <div className="py-16 text-center">
                     <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
                     <p className="text-sm text-gray-500 font-medium">
                       Loading enrolled students and attendance records...
                     </p>
                   </div>
-                ) : (
-                  students.map((student) => (
+                    ) : (
+                      students.map((student) => (
                     <div
                       key={student.id}
                       className="flex items-center justify-between py-2.5 px-1 hover:bg-gray-50 rounded-lg transition-colors text-sm"
@@ -621,13 +645,16 @@ const FacultyDashboardPage = () => {
                         </button>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Footer */}
-            <div className="p-5 border-t border-gray-200 bg-gray-50 space-y-4">
+            {attendanceMode === "manual" && (
+              <div className="p-5 border-t border-gray-200 bg-gray-50 space-y-4">
               <div className="flex justify-center items-center gap-6 text-sm text-gray-600">
                 <span>
                   Present:{" "}
@@ -668,7 +695,8 @@ const FacultyDashboardPage = () => {
                   <span>Submit Attendance</span>
                 )}
               </button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

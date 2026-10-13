@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { getUser } from "../action/auth/getUser";
@@ -14,6 +14,7 @@ export default function LayoutShell({ children }) {
   const pathname = usePathname();
   const dispatch = useDispatch();
   const showSideBar = !authRoutes.includes(pathname);
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -41,9 +42,16 @@ export default function LayoutShell({ children }) {
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
-      {showSideBar ? <SideBar /> : null}
+      {showSideBar ? (
+        <SideBar
+          isOpen={isNavigationOpen}
+          onClose={() => setIsNavigationOpen(false)}
+        />
+      ) : null}
       <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-        {showSideBar ? <Navbar /> : null}
+        {showSideBar ? (
+          <Navbar onMenuClick={() => setIsNavigationOpen(true)} />
+        ) : null}
         <div className="flex-1">{children}</div>
       </main>
     </div>

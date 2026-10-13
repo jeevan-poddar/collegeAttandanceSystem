@@ -5,7 +5,7 @@ import React from "react";
 
 const page = () => {
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto space-y-6 min-h-screen bg-gray-50">
+    <div className="page-shell max-w-6xl space-y-6">
       <div className="border-b border-gray-200 pb-4">
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
           Admin Dashboard
@@ -15,10 +15,10 @@ const page = () => {
           enrollments
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/dashboard/admin/addSubject"
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
+          className="minimal-card p-5 hover:border-gray-400 transition-colors group block space-y-2"
         >
           <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
             Add & Manage Subjects
@@ -30,7 +30,7 @@ const page = () => {
         </Link>
         <Link
           href="/dashboard/admin/batches"
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
+          className="minimal-card p-5 hover:border-gray-400 transition-colors group block space-y-2"
         >
           <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
             Configure Batches
@@ -42,7 +42,7 @@ const page = () => {
         </Link>
         <Link
           href="/dashboard/admin/manageBatches"
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
+          className="minimal-card p-5 hover:border-gray-400 transition-colors group block space-y-2"
         >
           <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
             Manage Batches & Students
@@ -55,7 +55,7 @@ const page = () => {
         </Link>
         <Link
           href="/dashboard/admin/assignRole"
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
+          className="minimal-card p-5 hover:border-gray-400 transition-colors group block space-y-2"
         >
           <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
             Assign Roles
@@ -68,7 +68,7 @@ const page = () => {
         </Link>
         <Link
           href="/dashboard/admin/manageRoles"
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
+          className="minimal-card p-5 hover:border-gray-400 transition-colors group block space-y-2"
         >
           <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
             Manage Roles
@@ -80,7 +80,7 @@ const page = () => {
         </Link>
         <Link
           href="/dashboard/admin/departments"
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group block space-y-2"
+          className="minimal-card p-5 hover:border-gray-400 transition-colors group block space-y-2"
         >
           <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
             Manage Departments
