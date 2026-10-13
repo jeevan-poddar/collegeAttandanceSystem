@@ -9,7 +9,7 @@ export default function StudentScanPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Hardcoded for testing. Later, you'll get this from the logged-in student's session!
-  const currentStudentId = 1; 
+  const currentStudentId = 17; 
 
   useEffect(() => {
 
