@@ -47,6 +47,7 @@ export async function submitAttendance(attendanceData) {
   const recordToSubmit = attendanceData.map((student) => ({
     ...student,
     marked_by: facultyId,
+    is_verified: true,
   }));
 
   const { error: upsertError } = await supabase

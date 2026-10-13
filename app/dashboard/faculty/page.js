@@ -9,6 +9,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { callWithRole } from "@/app/utlis/callWithRole";
 import { generateAttendanceToken } from "@/app/action/qr/attendanceQR";
+import AttendanceApprovalPanel from "@/app/component/AttendanceApprovalPanel";
 import QRCode from "react-qr-code";
 
 const FacultyDashboardPage = () => {
@@ -464,6 +465,16 @@ const FacultyDashboardPage = () => {
                   setSessionDesOn={setSessionDesOn}
                   setActiveClass={setActiveClass}
                 />
+                <AttendanceApprovalPanel
+                  sessionId={selectedSession.id}
+                  role={role}
+                  onChange={(result) =>
+                    setNotification({
+                      type: "success",
+                      message: `${result.count} attendance submission(s) processed.`,
+                    })
+                  }
+                />
               </div>
             )}
           </div>
@@ -530,10 +541,21 @@ const FacultyDashboardPage = () => {
                 </button>
                 <button
                   onClick={async () => {
-                    const token = await generateAttendanceToken(activeClass.id);
-                    console.log("Generated QR Code:", token);
-                    setQrValue(token.token);
-                    setShowQR(true);
+                    const token = await callWithRole(
+                      role,
+                      ["faculty", "hod"],
+                      generateAttendanceToken,
+                      activeClass.id,
+                    );
+                    if (token.success) {
+                      setQrValue(token.token);
+                      setShowQR(true);
+                    } else {
+                      setNotification({
+                        type: "error",
+                        message: token.error || "Unable to generate the attendance QR code.",
+                      });
+                    }
                   }}
                   className="bg-green-500 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-green-600 transition shrink-0 shadow-sm"
                 >

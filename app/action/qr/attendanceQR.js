@@ -1,15 +1,46 @@
 "use server";
 import nacl from "tweetnacl";
 import { decodeUTF8, encodeBase64, decodeBase64 } from "tweetnacl-util";
+import { createClient } from "@/utlis/supabase/server";
+import { getAuthClaims } from "../auth/getAuthClaims";
 
 // Load the secret key from environment variables
 const SECRET_KEY = decodeBase64(process.env.ENCRYPTION_KEY);
 
 export async function generateAttendanceToken(sessionId) {
   try {
+    const supabase = await createClient();
+    const auth = await getAuthClaims(supabase, ["faculty", "hod"]);
+    if (!auth.success) return auth;
+
+    const normalizedSessionId = Number(sessionId);
+    if (!Number.isInteger(normalizedSessionId) || normalizedSessionId <= 0) {
+      return { success: false, error: "A valid session ID is required." };
+    }
+
+    if (auth.userRole === "faculty") {
+      const { data: faculty, error: facultyError } = await supabase
+        .from("faculty")
+        .select("id")
+        .eq("user_id", auth.userId)
+        .single();
+      if (facultyError || !faculty) {
+        return { success: false, error: "Faculty profile not found." };
+      }
+      const { data: session, error: sessionError } = await supabase
+        .from("class_sessions")
+        .select("id")
+        .eq("id", normalizedSessionId)
+        .eq("actual_faculty_id", faculty.id)
+        .single();
+      if (sessionError || !session) {
+        return { success: false, error: "You are not allowed to generate a QR code for this session." };
+      }
+    }
+
     // 1. Create the payload with the current timestamp (crucial for freshness check!)
     const payload = {
-      sessionId: sessionId,
+      sessionId: normalizedSessionId,
       timestamp: Date.now(),
     };
 
@@ -38,8 +69,21 @@ export async function generateAttendanceToken(sessionId) {
 
 
 
-export async function verifyAndMarkAttendance(encryptedToken, studentId) {
+export async function verifyAndMarkAttendance(encryptedToken) {
   try {
+    const supabase = await createClient();
+    const auth = await getAuthClaims(supabase, ["student"]);
+    if (!auth.success) return auth;
+
+    const { data: student, error: studentError } = await supabase
+      .from("students")
+      .select("id")
+      .eq("user_id", auth.userId)
+      .single();
+    if (studentError || !student) {
+      return { success: false, error: "Student profile not found." };
+    }
+
     // 1. DECRYPT THE TOKEN
     const fullPackage = decodeBase64(encryptedToken);
     const nonce = fullPackage.slice(0, nacl.secretbox.nonceLength);
@@ -61,7 +105,7 @@ export async function verifyAndMarkAttendance(encryptedToken, studentId) {
     const ageInMs = Date.now() - timestamp;
     const MAX_AGE_MS = 30000; // 30 seconds threshold (gives a safe buffer over the 15s refresh)
 
-    if (ageInMs > MAX_AGE_MS) {
+    if (ageInMs > MAX_AGE_MS || ageInMs < 0) {
       return {
         success: false,
         error: "QR code has expired! Please scan the live code on screen.",
@@ -69,12 +113,10 @@ export async function verifyAndMarkAttendance(encryptedToken, studentId) {
     }
 
     // 4. INSERT PENDING ATTENDANCE INTO SUPABASE
-    const supabase = createClient();
-
     const { error: insertError } = await supabase.from("attendance").insert({
       class_session_id: sessionId,
-      student_id: studentId,
-      status: "pending", // Waiting for the teacher to accept!
+      student_id: student.id,
+      status: "present", // Waiting for the teacher to accept!
       marked_by: null, // Will be updated when the teacher accepts
       is_verified: false, // New column to track verification status
     });
@@ -95,6 +137,7 @@ export async function verifyAndMarkAttendance(encryptedToken, studentId) {
       message: "Attendance submitted! Waiting for teacher approval.",
     };
   } catch (err) {
+    console.error("Error processing attendance scan:", err);
     return { success: false, error: "Failed to process attendance scan." };
   }
 }
