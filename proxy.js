@@ -11,7 +11,7 @@ const ROLE_DASHBOARDS = {
 const PROTECTED_ROUTES = [
   { prefix: "/dashboard/admin", roles: ["admin"] },
   { prefix: "/dashboard/hod", roles: ["admin", "hod"] },
-  { prefix: "/dashboard/faculty", roles: [ "hod", "faculty"] },
+  { prefix: "/dashboard/faculty", roles: ["hod", "faculty"] },
   { prefix: "/dashboard/student", roles: ["student"] },
 ];
 
@@ -46,8 +46,8 @@ export async function proxy(request) {
   });
 
   const supabase = createServerClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -77,13 +77,18 @@ export async function proxy(request) {
   const isAuthenticated = !error && Boolean(claims?.sub);
   const role = getUserRole(claims);
   const pathname = request.nextUrl.pathname;
-  const isDashboardRoute = pathname === "/dashboard" || pathname === "/dashboard/";
+  const isDashboardRoute =
+    pathname === "/dashboard" || pathname === "/dashboard/";
   const protectedRoute = getProtectedRoute(pathname);
 
   if (!isAuthenticated) {
     if (isDashboardRoute || protectedRoute) {
       const redirectToPath = `${pathname}${request.nextUrl.search}`;
-      return redirectTo(request, "/login", `?redirectTo=${encodeURIComponent(redirectToPath)}`);
+      return redirectTo(
+        request,
+        "/login",
+        `?redirectTo=${encodeURIComponent(redirectToPath)}`,
+      );
     }
 
     return response;
