@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { getUser } from "../action/auth/getUser";
-import { setUser } from "../redux/user/userSlice";
+import { clearUser, setUser } from "../redux/user/userSlice";
 import SideBar from "./SideBar";
 import Navbar from "./Navbar";
 
@@ -21,14 +21,18 @@ export default function LayoutShell({ children }) {
 
     async function hydrateUser() {
       const response = await getUser();
-      if (!isMounted || !response) return;
+      if (!isMounted) return;
+
+      if (!response) {
+        dispatch(clearUser());
+        return;
+      }
 
       dispatch(
         setUser({
           userName: response.full_name,
           email: response.email,
           role: response.role,
-          isAuthenticated: response.isAuthenticated,
           userId: response.id,
         }),
       );
@@ -38,7 +42,7 @@ export default function LayoutShell({ children }) {
     return () => {
       isMounted = false;
     };
-  }, [dispatch]);
+  }, [dispatch, pathname]);
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
