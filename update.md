@@ -14,7 +14,11 @@
 14. Add ai to enter data in the field like time table allocation
 15. qr based attandance system
 16. notification system for students and faculty
-17. my batches should have a year filter
-18. hod can have list of all batches under his department and can view the students in those batches. he can also view the attendance of those students.
+<!-- 17. my batches should have a year filter -->
+<!-- 18. hod can have list of all batches under his department and can view the students in those batches. he can also view the attendance of those students. -->
 
 <!-- 19. in searchable dropdown component, when mode is is options then match is the value in it same any option the run upadteRow function with the value of that option. -->
+
+<!-- 20. Show effect of batch status and session status on the students and faculty. frontend should show the effect of batch status and session status on the students and faculty. -->
+
+21. update attendance like register

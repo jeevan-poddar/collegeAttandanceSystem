@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { getBatchesForAllocation } from "@/app/action/batches/getAllocationOptions";
 import { updateBatch, deleteBatch } from "@/app/action/batches/updateBatch";
+import { fetchDepartmentsForEdit } from "@/app/action/assignRole/manageRoles";
 import { getBatchStudents } from "@/app/action/batches/getBatchStudents";
 import { getAllStudents } from "@/app/action/batches/getAllStudents";
 import {
@@ -42,6 +43,7 @@ const ManageBatchesPage = () => {
   const [editForm, setEditForm] = useState({});
   const [actionLoading, setActionLoading] = useState(null);
   const [notification, setNotification] = useState({ type: "", message: "" });
+  const [departments, setDepartments] = useState([]);
 
   // Student modal states
   const [selectedBatchForStudents, setSelectedBatchForStudents] =
@@ -53,6 +55,16 @@ const ManageBatchesPage = () => {
   const [dataToInsert, setDataToInsert] = useState([]);
   const [isSubmittingStudents, setIsSubmittingStudents] = useState(false);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
+
+  useEffect(() => {
+    fetchDepartmentsForEdit().then((response) => {
+      if (response.success) {
+        setDepartments(response.departments || []);
+      } else {
+        setNotification({ type: "error", message: response.error });
+      }
+    });
+  }, []);
 
   // Function to order batches in frontend: first by session_year, then by batch_code
   const orderBatches = useCallback((dataList) => {
@@ -170,7 +182,7 @@ const ManageBatchesPage = () => {
       batch_code: batch.batch_code || "",
       session_year: batch.session_year || "",
       semester: batch.semester || 1,
-      branch: batch.branch || "",
+      department_id: batch.department_id || "",
       course: batch.course || "",
       room_no: batch.room_no || "",
       status: batch.status || "active",
@@ -512,6 +524,8 @@ const ManageBatchesPage = () => {
     return (
       (batch.batch_code && batch.batch_code.toLowerCase().includes(q)) ||
       (batch.branch && batch.branch.toLowerCase().includes(q)) ||
+      (batch.departments?.s_name &&
+        batch.departments.s_name.toLowerCase().includes(q)) ||
       (batch.course && batch.course.toLowerCase().includes(q)) ||
       (batch.room_no && batch.room_no.toLowerCase().includes(q))
     );
@@ -657,7 +671,7 @@ const ManageBatchesPage = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search visible records by Batch Code, Branch, Course, or Room No..."
+                placeholder="Search visible records by Batch Code, Department, Course, or Room No..."
                 className="border border-gray-300 rounded-xl pl-10 pr-4 py-2 w-full text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-xs"
               />
             </div>
@@ -688,7 +702,7 @@ const ManageBatchesPage = () => {
                   Semester
                 </th>
                 <th className="py-3.5 px-4 border-r border-gray-200 w-[15%]">
-                  Branch
+                  Department
                 </th>
                 <th className="py-3.5 px-4 border-r border-gray-200 w-[14%]">
                   Course
@@ -793,21 +807,26 @@ const ManageBatchesPage = () => {
                         )}
                       </td>
 
-                      {/* Branch */}
+                      {/* Department */}
                       <td className="p-3 border-r border-gray-200 text-gray-700 align-middle">
                         {isEditing ? (
-                          <input
-                            type="text"
-                            value={editForm.branch || ""}
+                          <select
+                            value={editForm.department_id || ""}
                             onChange={(e) =>
-                              handleInputChange("branch", e.target.value)
+                              handleInputChange("department_id", e.target.value)
                             }
                             onClick={(e) => e.stopPropagation()}
                             className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs"
-                            placeholder="Branch"
-                          />
+                          >
+                            <option value="">Select department</option>
+                            {departments.map((department) => (
+                              <option key={department.id} value={department.id}>
+                                {department.s_name}
+                              </option>
+                            ))}
+                          </select>
                         ) : (
-                          batch.branch || "—"
+                          batch.departments?.s_name || batch.branch || "—"
                         )}
                       </td>
 

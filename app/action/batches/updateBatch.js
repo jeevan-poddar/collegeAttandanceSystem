@@ -10,11 +10,19 @@ export async function updateBatch(id, updatedFields) {
     const auth = await getAuthClaims(supabase, ["admin", "hod"]);
     if (!auth.success) return auth;
 
+    const departmentId = Number(updatedFields.department_id);
+    if (!Number.isInteger(departmentId) || departmentId <= 0) {
+      return {
+        success: false,
+        error: "A valid department is required for every batch.",
+      };
+    }
+
     const payload = {
       batch_code: updatedFields.batch_code,
       session_year: updatedFields.session_year,
       semester: parseInt(updatedFields.semester, 10) || 0,
-      branch: updatedFields.branch,
+      department_id: departmentId,
       course: updatedFields.course,
       room_no: updatedFields.room_no,
       status: updatedFields.status, // "active", "inactive", "complete"

@@ -207,6 +207,11 @@ const StudentDashboardComponent = ({
       )
     : [];
 
+  const getBatchStatusLabel = (status) =>
+    status === "completed" ? "Completed" : status === "inactive" ? "Inactive" : "Active";
+
+  const isBatchAccessible = (batch) => (batch.status || "active") !== "inactive";
+
   const handleSubjectClick = async (alloc) => {
     if (subjectLoadingId === alloc.id || !student) return;
     if (typeof window !== "undefined" && !window.navigator.onLine) {
@@ -405,15 +410,23 @@ const StudentDashboardComponent = ({
                         a.batch_id === batch.id ||
                         Number(a.batch_id) === batch.id,
                     ).length;
+                    const isAccessible = isBatchAccessible(batch);
+                    const isActive = (batch.status || "active") === "active";
+                    const statusLabel = getBatchStatusLabel(batch.status);
 
                     return (
                       <div
                         key={batch.id}
                         onClick={() => {
+                          if (!isAccessible) return;
                           setSelectedBatch(batch);
                           setNotification({ type: "", message: "" });
                         }}
-                        className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer flex flex-col justify-between space-y-5 group"
+                        className={`bg-white border rounded-2xl p-6 shadow-xs transition-all flex flex-col justify-between space-y-5 group ${
+                          isAccessible
+                            ? "border-gray-200 hover:shadow-md hover:border-blue-300 cursor-pointer"
+                            : "border-gray-200 bg-gray-50/80 cursor-not-allowed opacity-85"
+                        }`}
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between gap-2">
@@ -421,9 +434,20 @@ const StudentDashboardComponent = ({
                               <Layers className="w-3.5 h-3.5" />
                               <span>Code: {batch.batch_code}</span>
                             </span>
-                            <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200/80">
-                              {batch.session_year || "Current Session"}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200/80">
+                                {batch.session_year || "Current Session"}
+                              </span>
+                              <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                                isActive
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : batch.status === "completed"
+                                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                                    : "bg-rose-50 text-rose-700 border-rose-200"
+                              }`}>
+                                {statusLabel}
+                              </span>
+                            </div>
                           </div>
                           <div>
                             <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
@@ -443,9 +467,11 @@ const StudentDashboardComponent = ({
                             <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
                             <span>{subjectCount} Subject(s)</span>
                           </span>
-                          <span className="text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5">
-                            Select Batch{" "}
-                            <ChevronRight className="w-3.5 h-3.5" />
+                          <span className={`text-xs font-bold inline-flex items-center gap-0.5 ${
+                            isAccessible ? "text-blue-600 group-hover:translate-x-1" : "text-gray-500"
+                          } transition-transform`}>
+                            {isAccessible ? (isActive ? "Select Batch" : "View Batch") : `${statusLabel} batch`}
+                            {isAccessible && <ChevronRight className="w-3.5 h-3.5" />}
                           </span>
                         </div>
                       </div>

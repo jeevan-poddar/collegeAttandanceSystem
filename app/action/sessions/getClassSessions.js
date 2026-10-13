@@ -58,13 +58,16 @@ export async function getClassSessions() {
       is_proxy,
       actual_faculty_id,
       batch_group,
-      batches ( id, batch_code, semester, branch, course ),
+      batches ( id, batch_code, semester, department_id, course, status, departments(id, s_name) ),
       subjects ( subject_name ),
+      attendance ( count ),
       timetable_master!inner ( period_number, room_no, faculty_id, batch_group )
     `,
       )
       .gte("session_date", startDate.toISOString()) // Good practice to format dates to ISO
       .lte("session_date", endDate.toISOString())
+      .order("session_date", { ascending: true })
+      .order("timetable_master_id", { ascending: true })
       .or(orQuery); // Use our safe, single-table OR query
 
     if (error) {
@@ -91,8 +94,10 @@ export async function getClassSessions() {
           session.batch_group || session.timetable_master?.batch_group || null,
         sem: session.batches.semester,
         room: session.timetable_master.room_no,
-        branch: session.batches.branch,
+        branch: session.batches.departments?.s_name || "",
         course: session.batches.course,
+        batch_status: session.batches.status,
+        attendance_marked: (session.attendance?.[0]?.count || 0) > 0,
         is_proxy: session.is_proxy,
         // If they are not the actual teacher, someone else is taking it (Proxy)
         proxy_teacher:

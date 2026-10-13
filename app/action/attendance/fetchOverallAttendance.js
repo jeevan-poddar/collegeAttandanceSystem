@@ -6,8 +6,24 @@ import { getAuthClaims } from "../auth/getAuthClaims";
 export async function fetchOverallAttendance(batchId, sessionIds, studentIds) {
   try {
     const supabase = await createClient();
-    const auth = await getAuthClaims(supabase, ["faculty", "hod", "admin"]);
+    const auth = await getAuthClaims(supabase, [
+      "student",
+      "faculty",
+      "hod",
+      "admin",
+    ]);
     if (!auth.success) return auth;
+
+    if (!Array.isArray(sessionIds) || !Array.isArray(studentIds)) {
+      return {
+        success: false,
+        error: "Session and student identifiers are required.",
+      };
+    }
+
+    if (sessionIds.length === 0 || studentIds.length === 0) {
+      return { success: true, data: [] };
+    }
 
     const { data: attendanceData, error } = await supabase
       .from("attendance")

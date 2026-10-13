@@ -1,13 +1,15 @@
 "use server";
 
-import { endOfWeek, startOfWeek } from "date-fns";
+import { endOfWeek, format, startOfWeek } from "date-fns";
 import { getUser } from "../auth/getUser";
 import { createClient } from "@/utlis/supabase/server";
 
 export async function fetchClassSession() {
   try {
     const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
+    const endDate = endOfWeek(startDate, { weekStartsOn: 1 });
+    const startDateValue = format(startDate, "yyyy-MM-dd");
+    const endDateValue = format(endDate, "yyyy-MM-dd");
     const supabase = await createClient();
     const user = await getUser(["faculty", "hod"]);
     console.log("time:", new Date());
@@ -58,13 +60,16 @@ export async function fetchClassSession() {
       is_proxy,
       actual_faculty_id,
       batch_group,
-      batches ( id, batch_code, semester, branch, course ),
+      batches ( id, batch_code, semester, department_id, course, status, departments(id, s_name) ),
       subjects ( subject_name ),
+      attendance ( count ),
       timetable_master!inner ( period_number, room_no, faculty_id, batch_group )
     `,
       )
-      .gte("session_date", startDate.toISOString()) // Good practice to format dates to ISO
-      .lte("session_date", endDate.toISOString())
+      .gte("session_date", startDateValue)
+      .lte("session_date", endDateValue)
+      .order("session_date", { ascending: true })
+      .order("timetable_master_id", { ascending: true })
       .or(orQuery); // Use our safe, single-table OR query
 
     if (error) {
@@ -91,8 +96,10 @@ export async function fetchClassSession() {
           session.batch_group || session.timetable_master?.batch_group || null,
         sem: session.batches.semester,
         room: session.timetable_master.room_no,
-        branch: session.batches.branch,
+        branch: session.batches.departments?.s_name || "",
         course: session.batches.course,
+        batch_status: session.batches.status,
+        attendance_marked: (session.attendance?.[0]?.count || 0) > 0,
         is_proxy: session.is_proxy,
         // If they are not the actual teacher, someone else is taking it (Proxy)
         proxy_teacher:
@@ -102,8 +109,12 @@ export async function fetchClassSession() {
         status: session.status,
         session_date: session.session_date,
       };
+    }).sort((left, right) => {
+      const leftDate = new Date(left.session_date).getTime();
+      const rightDate = new Date(right.session_date).getTime();
+      return leftDate - rightDate || left.period - right.period;
     });
-    // console.log("Formatted Sessions:", formattedSessions);
+    console.log("Formatted Sessions:", formattedSessions);
     return formattedSessions;
   } catch (error) {
     console.error("Error fetching class sessions:", error.message);

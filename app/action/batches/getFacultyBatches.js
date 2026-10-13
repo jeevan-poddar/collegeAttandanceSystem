@@ -36,7 +36,7 @@ export async function getFacultyBatches() {
         `
         id,
         batch_group,
-        batches ( id, batch_code, semester, branch, course,status ),
+        batches ( id, batch_code, session_year, semester, department_id, course,status, departments(id, s_name) ),
         subjects ( id, subject_name, subject_code )
       `,
       )
@@ -45,14 +45,17 @@ export async function getFacultyBatches() {
 
     // 3. Format the data for the frontend
     const formattedBatches = allocations
-      .filter((record) => record.batches.status === "active")
+      .filter((record) => record.batches)
       .map((record) => ({
         id: record.id,
         batch_id: record.batches.id,
         batch_code: record.batches.batch_code,
+        session_year: record.batches.session_year,
+        batch_status: record.batches.status,
         batch_group: record.batch_group || null,
         semester: record.batches.semester,
         course: record.batches.course,
+        branch: record.batches.departments?.s_name || "",
         subject_id: record.subjects.id,
         subject_name: record.subjects.subject_name,
         subject_code: record.subjects.subject_code,

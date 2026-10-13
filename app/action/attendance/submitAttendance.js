@@ -8,7 +8,24 @@ export async function submitAttendance(attendanceData) {
   const auth = await getAuthClaims(supabase, ["faculty", "hod"]);
   if (!auth.success) return auth;
 
-  console.log("User ID2:", auth.userId); // Log the user ID to verify it's being retrieved correctly
+  if (!Array.isArray(attendanceData) || attendanceData.length === 0) {
+    return {
+      success: false,
+      message: "Attendance data is required.",
+    };
+  }
+
+  const sessionIds = new Set(
+    attendanceData.map((record) => record?.class_session_id),
+  );
+  if (sessionIds.size !== 1 || sessionIds.has(undefined)) {
+    return {
+      success: false,
+      message: "Attendance must belong to one class session.",
+    };
+  }
+
+  const classSessionId = attendanceData[0].class_session_id;
   let facultyDetails;
   try {
     const { data, error: facultyError } = await supabase
@@ -45,6 +62,23 @@ export async function submitAttendance(attendanceData) {
       success: false,
       message: "Failed to save attendance.",
       error: upsertError.message,
+    };
+  }
+
+  const { error: sessionUpdateError } = await supabase
+    .from("class_sessions")
+    .update({ status: "completed" })
+    .eq("id", classSessionId)
+    .in("status", ["scheduled", "completed"])
+    .select("id")
+    .single();
+
+  if (sessionUpdateError) {
+    console.error("Error updating class session status:", sessionUpdateError);
+    return {
+      success: false,
+      message: "Attendance was saved, but the session status could not be updated.",
+      error: sessionUpdateError.message,
     };
   }
 

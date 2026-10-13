@@ -13,7 +13,8 @@ async function getBatchesAndAllocationsForStudent(supabase, student) {
       batch_id,
       batch_group,
       batches (
-        id, batch_code, session_year, semester, branch, course, room_no, status
+        id, batch_code, session_year, semester, department_id, course, room_no, status,
+        departments(id, s_name)
       )
     `,
     )
@@ -33,6 +34,7 @@ async function getBatchesAndAllocationsForStudent(supabase, student) {
     .filter((record) => record.batches)
     .map((record) => ({
       ...record.batches,
+      branch: record.batches.departments?.s_name || "",
       student_group: record.batch_group || null,
     }));
 

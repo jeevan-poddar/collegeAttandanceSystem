@@ -16,10 +16,16 @@ export async function createBatches(data) {
     batch_code: item.batch_code?.trim() || "",
     session_year: item.session_year?.trim() || "",
     semester: parseInt(item.semester, 10) || 0,
-    branch: item.branch?.trim() || "",
+    department_id: Number(item.department_id) || 0,
     course: item.course?.trim() || "",
     room_no: item.room_no?.trim() || "",
   }));
+  if (formatData.some((item) => item.department_id <= 0)) {
+    return {
+      success: false,
+      error: "Every batch must be assigned to a valid department.",
+    };
+  }
   console.log("Formatted Data:", formatData);
 
   try {

@@ -153,11 +153,15 @@ export async function fetchUserRoleDetails(userId) {
       if (role === "hod") {
         const { data: hodData } = await supabase
           .from("hod")
-          .select("id, department_id")
+          .select("id, department_id, name, email, phone")
           .eq("user_id", userId)
           .maybeSingle();
         if (hodData) {
-          roleDetails = { ...roleDetails, hodRecord: hodData };
+          roleDetails = {
+            ...roleDetails,
+            ...hodData,
+            hodRecord: hodData,
+          };
         }
       }
     }
@@ -247,14 +251,45 @@ export async function updateUserRoleDetails(userId, role, updates) {
       if (error) {
         throw new Error("Error updating faculty details: " + error.message);
       }
+
+      if (role === "hod") {
+        const { data: hodRecord, error: hodFetchError } = await supabase
+          .from("hod")
+          .select("id")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (hodFetchError) {
+          throw new Error(
+            "Error finding HOD details: " + hodFetchError.message,
+          );
+        }
+        if (!hodRecord) {
+          throw new Error("HOD details were not found for this user.");
+        }
+
+        const { error: hodUpdateError } = await supabase
+          .from("hod")
+          .update(filtered)
+          .eq("id", hodRecord.id);
+        if (hodUpdateError) {
+          throw new Error(
+            "Error updating HOD details: " + hodUpdateError.message,
+          );
+        }
+      }
     }
 
     // Also update full_name on the users table if name changed
     if (updates.name !== undefined) {
-      await supabase
+      const { error: userUpdateError } = await supabase
         .from("users")
         .update({ full_name: updates.name })
         .eq("id", userId);
+      if (userUpdateError) {
+        throw new Error(
+          "Error updating user name: " + userUpdateError.message,
+        );
+      }
     }
 
     return { success: true };

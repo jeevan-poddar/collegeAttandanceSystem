@@ -18,12 +18,17 @@ export async function fetchAttendanceSessions(
       batchGroup,
     );
     const supabase = await createClient();
-    const auth = await getAuthClaims(supabase, ["faculty", "hod", "admin"]);
+    const auth = await getAuthClaims(supabase, [
+      "student",
+      "faculty",
+      "hod",
+      "admin",
+    ]);
     if (!auth.success) return auth;
 
     const { data: sessions, error } = await supabase
       .from("class_sessions")
-      .select("id, session_date, batch_group")
+      .select("id, session_date, batch_group, status")
       .eq("batch_id", batchId)
       .eq("subject_id", subjectId)
       .order("session_date", { ascending: true });

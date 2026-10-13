@@ -37,7 +37,7 @@ export async function fetchBatches() {
         `
         id,
         batch_group,
-        batches ( id, batch_code, semester, branch, course,status ),
+        batches ( id, batch_code, semester, department_id, course,status, departments(id, s_name) ),
         subjects ( id, subject_name, subject_code )
       `,
       )

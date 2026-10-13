@@ -19,7 +19,23 @@ const MyBatchesPage = () => {
   const [loading, setLoading] = useState(true);
   const [batchLoadingId, setBatchLoadingId] = useState(null);
   const [selectedTitle, setSelectedTitle] = useState("");
+  const [selectedYear, setSelectedYear] = useState("all");
   const [notification, setNotification] = useState({ type: "", message: "" });
+  const availableYears = [
+    ...new Set(
+      myBatches
+        .map((batch) => batch.session_year?.trim())
+        .filter(Boolean),
+    ),
+  ].sort((left, right) => right.localeCompare(left, undefined, { numeric: true }));
+  const filteredBatches =
+    selectedYear === "all"
+      ? myBatches
+      : myBatches.filter(
+          (batch) => batch.session_year?.trim() === selectedYear,
+        );
+  const getBatchStatusLabel = (status) =>
+    status === "completed" ? "Completed" : status === "inactive" ? "Inactive" : "Active";
 
   useEffect(() => {
     const handleOffline = () => {
@@ -160,9 +176,33 @@ const MyBatchesPage = () => {
             </p>
           </div>
         </div>
-      ) : myBatches.length > 0 ? (
+      ) : (
+        <>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <label
+              htmlFor="batch-year-filter"
+              className="text-sm font-semibold text-gray-700"
+            >
+              Filter by session year
+            </label>
+            <select
+              id="batch-year-filter"
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(event.target.value)}
+              className="w-full sm:w-56 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="all">All years</option>
+              {availableYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {filteredBatches.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {myBatches.map((batch) => {
+          {filteredBatches.map((batch) => {
             const isBusy = batchLoadingId === batch.id;
             return (
               <div
@@ -267,6 +307,15 @@ const MyBatchesPage = () => {
                     <span className="inline-block px-2.5 py-1 bg-blue-50 text-blue-700 font-bold text-xs rounded-full border border-blue-100 group-hover:bg-blue-100/80 transition-colors">
                       Batch Code: {batch.batch_code}
                     </span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                      batch.batch_status === "active"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : batch.batch_status === "completed"
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : "bg-rose-50 text-rose-700 border-rose-200"
+                    }`}>
+                      {getBatchStatusLabel(batch.batch_status)}
+                    </span>
                     {isBusy && (
                       <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
                     )}
@@ -274,6 +323,10 @@ const MyBatchesPage = () => {
                   <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors leading-snug">
                     {batch.subject_name}
                   </h2>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {batch.branch || "Academic Branch"} • Semester{" "}
+                    {batch.semester || "—"}
+                  </p>
                   {isBusy && (
                     <p className="text-xs text-blue-600 font-medium mt-2 animate-pulse">
                       Loading attendance register...
@@ -284,10 +337,14 @@ const MyBatchesPage = () => {
             );
           })}
         </div>
-      ) : (
+          ) : (
         <div className="bg-white border border-gray-200 rounded-xl p-12 text-center text-gray-500 text-sm">
-          No assigned batches found.
+          {myBatches.length > 0
+            ? "No batches found for the selected year."
+            : "No assigned batches found."}
         </div>
+          )}
+        </>
       )}
 
       {viewAttandance && (

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
-  getBatchesForAllocation,
+  getHodBatches,
   getFaculty,
 } from "@/app/action/batches/getAllocationOptions";
 import { fetchAllocatedFaculty } from "@/app/action/faculty/facultyAllocation";
@@ -91,13 +91,20 @@ const HODBatchAttendancePage = () => {
 
     try {
       const [batchRes, allocRes, subRes, facRes] = await Promise.all([
-        callWithRole(role, ["hod"], getBatchesForAllocation, "ALL"),
+        callWithRole(role, ["hod"], getHodBatches, "ALL"),
         callWithRole(role, ["hod"], fetchAllocatedFaculty),
         callWithRole(role, ["hod"], getSubjects),
         callWithRole(role, ["hod"], getFaculty),
       ]);
 
-      if (batchRes?.data) setAllBatches(batchRes.data);
+      if (batchRes?.success) {
+        setAllBatches(batchRes.data || []);
+      } else {
+        setNotification({
+          type: "error",
+          message: batchRes?.error || "Failed to load department batches.",
+        });
+      }
       if (allocRes?.data) setAllocations(allocRes.data);
       if (subRes?.data) setAllSubjects(subRes.data);
       if (facRes?.data) setAllFaculty(facRes.data);
@@ -129,13 +136,20 @@ const HODBatchAttendancePage = () => {
       }
       try {
         const [batchRes, allocRes, subRes, facRes] = await Promise.all([
-          callWithRole(role, ["hod"], getBatchesForAllocation, "ALL"),
+          callWithRole(role, ["hod"], getHodBatches, "ALL"),
           callWithRole(role, ["hod"], fetchAllocatedFaculty),
           callWithRole(role, ["hod"], getSubjects),
           callWithRole(role, ["hod"], getFaculty),
         ]);
         if (!isMounted) return;
-        if (batchRes?.data) setAllBatches(batchRes.data);
+        if (batchRes?.success) {
+          setAllBatches(batchRes.data || []);
+        } else {
+          setNotification({
+            type: "error",
+            message: batchRes?.error || "Failed to load department batches.",
+          });
+        }
         if (allocRes?.data) setAllocations(allocRes.data);
         if (subRes?.data) setAllSubjects(subRes.data);
         if (facRes?.data) setAllFaculty(facRes.data);
@@ -200,6 +214,13 @@ const HODBatchAttendancePage = () => {
           Number(item.batch_id) === selectedBatch.id,
       )
     : [];
+
+  const getBatchStatusLabel = (status) =>
+    status === "completed"
+      ? "Completed"
+      : status === "inactive"
+        ? "Inactive"
+        : "Active";
 
   const handleBatchSelect = async (batch) => {
     setNotification({ type: "", message: "" });
@@ -435,9 +456,22 @@ const HODBatchAttendancePage = () => {
                           <Layers className="w-3.5 h-3.5" />
                           {batch.branch || "General Academic Branch"}
                         </span>
-                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200/80">
-                          {batch.session_year || "All Sessions"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200/80">
+                            {batch.session_year || "All Sessions"}
+                          </span>
+                          <span
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                              batch.status === "active"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : batch.status === "completed"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : "bg-rose-50 text-rose-700 border-rose-200"
+                            }`}
+                          >
+                            {getBatchStatusLabel(batch.status)}
+                          </span>
+                        </div>
                       </div>
                       <div>
                         <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
@@ -490,6 +524,17 @@ const HODBatchAttendancePage = () => {
                 </h2>
                 <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
                   {selectedBatch.session_year || "N/A"}
+                </span>
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                    selectedBatch.status === "active"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : selectedBatch.status === "completed"
+                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                        : "bg-rose-50 text-rose-700 border-rose-200"
+                  }`}
+                >
+                  {getBatchStatusLabel(selectedBatch.status)}
                 </span>
               </div>
               <p className="text-sm text-gray-600 mt-1">

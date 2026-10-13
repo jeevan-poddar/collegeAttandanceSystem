@@ -1,6 +1,6 @@
 "use client";
 import { fetchAttendance } from "@/app/action/attendance/fetchAttendance";
-import { getClassSessions } from "@/app/action/sessions/getClassSessions";
+import { fetchClassSession } from "@/app/action/sessions/fetchClassSession";
 import { getBatchStudents } from "@/app/action/batches/getBatchStudents";
 import { submitAttendance } from "@/app/action/attendance/submitAttendance";
 import Cell from "@/app/component/Cell";
@@ -66,7 +66,7 @@ const FacultyDashboardPage = () => {
         const data = await callWithRole(
           role,
           ["faculty", "hod"],
-          getClassSessions,
+          fetchClassSession,
         );
         setClassSessions(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -132,6 +132,13 @@ const FacultyDashboardPage = () => {
           type: "success",
           message: `Successfully marked attendance for ${attendanceRecords.length} student(s)!`,
         });
+        setClassSessions((sessions) =>
+          sessions.map((session) =>
+            session.id === activeClass.id
+              ? { ...session, status: "completed", attendance_marked: true }
+              : session,
+          ),
+        );
         setActiveClass(null);
         setAttendance({});
       } else {
@@ -171,6 +178,29 @@ const FacultyDashboardPage = () => {
     "01:05 PM - 02:10 PM",
     "02:10 PM - 03:15 PM",
   ];
+  const isPastSession = (session) => {
+    if (!session?.session_date) return false;
+    const sessionDate = String(session.session_date).slice(0, 10);
+    const today = new Date();
+    const todayDate = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+    return sessionDate < todayDate;
+  };
+  const sessionStatusLabel = (session) => {
+    if (session.status === "completed") return "Completed";
+    if (session.status === "cancelled") return "Cancelled";
+    if (session.status === "holiday") return "Holiday";
+    if (isPastSession(session) && !session.attendance_marked) {
+      return "Not Marked";
+    }
+    return "Scheduled";
+  };
+  const canMarkAttendance = (session) =>
+    ["scheduled", "completed"].includes(session?.status) &&
+    session?.batch_status === "active";
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col">
       {/* Top Banner / Header */}
@@ -373,6 +403,16 @@ const FacultyDashboardPage = () => {
                                   </p>
                                   <p className="text-xs text-gray-500 leading-tight">
                                     {session.room}
+                                  </p>
+                                  <p className={`text-[10px] font-bold uppercase tracking-wide ${
+                                    sessionStatusLabel(session) === "Not Marked"
+                                      ? "text-rose-600"
+                                      : "text-emerald-600"
+                                  }`}>
+                                    {sessionStatusLabel(session)}
+                                    {session.batch_status !== "active"
+                                      ? ` • ${session.batch_status || "inactive"} batch`
+                                      : ""}
                                   </p>
                                 </div>
                               ) : (

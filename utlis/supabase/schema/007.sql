@@ -29,9 +29,40 @@ drop column department;
 ALTER table faculty
 add column department_id int not null references departments(id);
 
-Alter tabel hod
+ALTER TABLE hod
 add column email varchar not null unique;
-Alter tabel hod
+ALTER TABLE hod
 add column name varchar not null;
-Alter tabel hod
+ALTER TABLE hod
 add column phone numeric(10, 0) unique not null;
+
+
+ALTER TABLE batches
+ADD COLUMN department_id int;
+
+UPDATE batches b
+SET department_id = d.id
+FROM departments d
+WHERE upper(trim(b.branch)) = upper(trim(d.s_name));
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM batches WHERE department_id IS NULL) THEN
+    RAISE EXCEPTION
+      'Cannot migrate batches: one or more branch values do not match departments.s_name';
+  END IF;
+END $$;
+
+ALTER TABLE batches
+ALTER COLUMN department_id SET NOT NULL;
+
+ALTER TABLE batches
+ADD CONSTRAINT batches_department_id_fkey
+FOREIGN KEY (department_id)
+REFERENCES departments(id);
+
+CREATE INDEX batches_department_id_idx
+ON batches(department_id);
+
+ALTER TABLE batches
+DROP COLUMN branch;

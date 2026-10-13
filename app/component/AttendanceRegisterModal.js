@@ -134,6 +134,13 @@ const AttendanceRegisterModal = ({
                       <div className="text-[10px] font-normal text-gray-500 mt-0.5">
                         {formatSessionDate(session.session_date)}
                       </div>
+                      <div className={`text-[9px] font-bold uppercase ${
+                        session.status === "cancelled" || session.status === "holiday"
+                          ? "text-rose-600"
+                          : "text-emerald-600"
+                      }`}>
+                        {session.status || "scheduled"}
+                      </div>
                     </th>
                   ))}
                   <th className="py-3.5 px-4 text-center whitespace-nowrap w-28 font-bold text-gray-800 bg-gray-100/80">
@@ -177,6 +184,8 @@ const AttendanceRegisterModal = ({
                             record.student_id === student.id,
                         );
                         const status = attendanceRecord ? attendanceRecord.status : "N/A";
+                        const unavailable =
+                          session.status === "cancelled" || session.status === "holiday";
                         return (
                           <td
                             key={sessionIndex}
@@ -184,7 +193,9 @@ const AttendanceRegisterModal = ({
                           >
                             <span
                               className={`inline-flex w-7 h-7 items-center justify-center rounded-lg font-bold text-xs shadow-2xs transition-transform hover:scale-110 ${
-                                status === "present"
+                                unavailable
+                                  ? "bg-rose-50 text-rose-500 border border-rose-200"
+                                  : status === "present"
                                   ? "bg-emerald-500 text-white"
                                   : status === "absent"
                                     ? "bg-rose-500 text-white"
@@ -192,9 +203,13 @@ const AttendanceRegisterModal = ({
                                       ? "bg-amber-500 text-white"
                                       : "bg-gray-100 text-gray-400 border border-gray-200"
                               }`}
-                              title={`Status: ${status.toUpperCase()}`}
+                              title={`Session: ${(session.status || "scheduled").toUpperCase()} | Attendance: ${status.toUpperCase()}`}
                             >
-                              {status === "present"
+                              {unavailable
+                                ? session.status === "holiday"
+                                  ? "H"
+                                  : "C"
+                                : status === "present"
                                 ? "P"
                                 : status === "absent"
                                   ? "A"
@@ -206,15 +221,20 @@ const AttendanceRegisterModal = ({
                         );
                       })}
                       {(() => {
+                        const countableSessions = filteredSessionDetails.filter(
+                          (session) =>
+                            session.status !== "cancelled" &&
+                            session.status !== "holiday",
+                        );
                         const totalPresent = attendance.filter(
                           (record) =>
                             record.student_id === student.id &&
-                            filteredSessionDetails.some(
+                            countableSessions.some(
                               (session) => session.id === record.class_session_id,
                             ) &&
                             (record.status === "present" || record.status === "outside"),
                         ).length;
-                        const totalSessions = filteredSessionDetails.length;
+                        const totalSessions = countableSessions.length;
                         const percentage = totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : 0;
                         return (
                           <td className="py-3 px-4 text-center font-bold text-gray-900 bg-gray-50/60">

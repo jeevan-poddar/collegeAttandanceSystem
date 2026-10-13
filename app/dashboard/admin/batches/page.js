@@ -1,9 +1,10 @@
 "use client";
 
 import SearchAbleDropdown from "@/app/component/SearchableDropdown";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { createBatches } from "@/app/action/batches/createBatches";
+import { fetchDepartmentsForEdit } from "@/app/action/assignRole/manageRoles";
 import { callWithRole } from "@/app/utlis/callWithRole";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -12,6 +13,17 @@ const BatchesPage = () => {
   const [dataToInsert, setDataToInsert] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState({ type: "", message: "" });
+  const [departments, setDepartments] = useState([]);
+
+  useEffect(() => {
+    fetchDepartmentsForEdit().then((response) => {
+      if (response.success) {
+        setDepartments(response.departments || []);
+      } else {
+        setNotification({ type: "error", message: response.error });
+      }
+    });
+  }, []);
 
   const insertRow = () => {
     setDataToInsert((prevData) => [
@@ -20,7 +32,7 @@ const BatchesPage = () => {
         batch_code: "",
         session_year: "",
         semester: "",
-        branch: "",
+        department_id: "",
         course: "",
         room_no: "",
       },
@@ -63,7 +75,7 @@ const BatchesPage = () => {
         !item.batch_code?.trim() ||
         !item.session_year?.trim() ||
         !item.semester ||
-        !item.branch?.trim() ||
+        !item.department_id ||
         !item.course?.trim() ||
         !item.room_no?.trim(),
     );
@@ -198,7 +210,7 @@ const BatchesPage = () => {
                   Semester
                 </th>
                 <th className="py-3 px-3.5 border-r border-gray-200 w-1/6">
-                  Branch
+                  Department
                 </th>
                 <th className="py-3 px-3.5 border-r border-gray-200 w-1/6">
                   Course
@@ -259,18 +271,20 @@ const BatchesPage = () => {
                       />
                     </td>
                     <td className="p-2.5 border-r border-gray-200 align-top">
-                      <SearchAbleDropdown
-                        options={[]}
-                        searchFor={["branch"]}
-                        insert={{
-                          branch: "branch",
-                        }}
-                        setDataToInsert={setDataToInsert}
-                        index={index}
-                        updateRow={updateRow}
-                        mode="custom"
-                        placeholder="Branch"
-                      />
+                      <select
+                        value={row.department_id}
+                        onChange={(e) =>
+                          updateRow(index, "department_id", e.target.value)
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
+                      >
+                        <option value="">Select department</option>
+                        {departments.map((department) => (
+                          <option key={department.id} value={department.id}>
+                            {department.s_name}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="p-2.5 border-r border-gray-200 align-top">
                       <SearchAbleDropdown
