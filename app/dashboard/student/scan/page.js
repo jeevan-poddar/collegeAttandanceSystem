@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
-import { verifyAndMarkAttendance } from "@/app/actions/attendanceQR"; // Point to your server action
-
+import { verifyAndMarkAttendance } from "@/app/action/qr/attendanceQR";
 export default function StudentScanPage() {
   const [scanResult, setScanResult] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
@@ -13,6 +12,8 @@ export default function StudentScanPage() {
   const currentStudentId = 1; 
 
   useEffect(() => {
+
+
     // 1. Initialize the scanner when the page loads
     const scanner = new Html5QrcodeScanner(
       "reader", 

@@ -31,8 +31,7 @@ const Home = () => {
         <p className="text-sm md:text-base font-medium text-gray-600">
           {renderRoleMessage()}
         </p>
-
-        <div className="mt-4"><Link href="/dashboard/student/scan">Scan QR Code</Link></div>
+        <Link href="/dashboard/student/scan">Scan QR Code</Link>
       </div>
     </div>
   );
