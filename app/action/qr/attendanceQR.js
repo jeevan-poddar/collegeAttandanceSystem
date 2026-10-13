@@ -95,11 +95,12 @@ export async function verifyAndMarkAttendance(encryptedToken) {
     // 2. READ THE PAYLOAD
     const messageString = new TextDecoder().decode(decryptedBytes);
     const payload = JSON.parse(messageString);
-    const { sessionId, timestamp } = payload;
-    // console.log("Decrypted payload:", payload);
+    const { s, t } = payload;
+    console.log("Decrypted payload:", payload);
+    console.log("sessionId:", s, "timestamp:", t);
 
     // 3. FRESHNESS CHECK (Anti-WhatsApp Attack)
-    const ageInMs = Date.now() - timestamp;
+    const ageInMs = Date.now() - t;
     const MAX_AGE_MS = 30000; // 30 seconds threshold (gives a safe buffer over the 15s refresh)
 
     if (ageInMs > MAX_AGE_MS || ageInMs < 0) {
@@ -109,13 +110,13 @@ export async function verifyAndMarkAttendance(encryptedToken) {
       };
     }
     console.log("Data to insert into attendance table:", {
-      class_session_id: sessionId,
+      class_session_id: s,
       student_id: student.id,
     });
 
     // 4. INSERT PENDING ATTENDANCE INTO SUPABASE
     const { error: insertError } = await supabase.from("attendance").insert({
-      class_session_id: sessionId,
+      class_session_id: s,
       student_id: student.id,
     });
 
