@@ -2,6 +2,7 @@
   "name": "dgi",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,12 +14,16 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.111.0",
     "date-fns": "^4.4.0",
+    "html5-qrcode": "^2.3.8",
     "lucide-react": "^1.27.0",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.83.0",
-    "react-redux": "^9.3.0"
+    "react-qr-code": "^2.2.0",
+    "react-redux": "^9.3.0",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

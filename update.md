@@ -22,3 +22,7 @@
 <!-- 20. Show effect of batch status and session status on the students and faculty. frontend should show the effect of batch status and session status on the students and faculty. -->
 
 21. update attendance like register
+
+22. Add on Submit to all submmison buttons to prevent double submission.
+
+23. A Notification system for students and faculty. It should be able to send notifications for important events, deadlines, and updates related to their courses and batches.

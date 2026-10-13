@@ -66,3 +66,8 @@ ON batches(department_id);
 
 ALTER TABLE batches
 DROP COLUMN branch;
+
+
+
+ALTER TABLE attendance
+ADD COLUMN is_verified boolean DEFAULT false;

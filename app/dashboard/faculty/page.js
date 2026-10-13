@@ -8,6 +8,8 @@ import React, { useEffect, useState } from "react";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { callWithRole } from "@/app/utlis/callWithRole";
+import { generateAttendanceToken } from "@/app/action/qr/attendanceQR";
+import QRCode from "react-qr-code";
 
 const FacultyDashboardPage = () => {
   const role = useSelector((state) => state.user.role);
@@ -21,6 +23,8 @@ const FacultyDashboardPage = () => {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState({ type: "", message: "" });
+  const [showQR, setShowQR] = useState(false);
+  const [qrValue, setQrValue] = useState("");
 
   useEffect(() => {
     const handleOffline = () => {
@@ -404,11 +408,14 @@ const FacultyDashboardPage = () => {
                                   <p className="text-xs text-gray-500 leading-tight">
                                     {session.room}
                                   </p>
-                                  <p className={`text-[10px] font-bold uppercase tracking-wide ${
-                                    sessionStatusLabel(session) === "Not Marked"
-                                      ? "text-rose-600"
-                                      : "text-emerald-600"
-                                  }`}>
+                                  <p
+                                    className={`text-[10px] font-bold uppercase tracking-wide ${
+                                      sessionStatusLabel(session) ===
+                                      "Not Marked"
+                                        ? "text-rose-600"
+                                        : "text-emerald-600"
+                                    }`}
+                                  >
                                     {sessionStatusLabel(session)}
                                     {session.batch_status !== "active"
                                       ? ` • ${session.batch_status || "inactive"} batch`
@@ -521,6 +528,17 @@ const FacultyDashboardPage = () => {
                 >
                   Mark all Present
                 </button>
+                <button
+                  onClick={async () => {
+                    const token = await generateAttendanceToken(activeClass.id);
+                    console.log("Generated QR Code:", token);
+                    setQrValue(token.token);
+                    setShowQR(true);
+                  }}
+                  className="bg-green-500 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-green-600 transition shrink-0 shadow-sm"
+                >
+                  Generate QR Code
+                </button>
               </div>
 
               <div className="divide-y divide-gray-100">
@@ -629,6 +647,25 @@ const FacultyDashboardPage = () => {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showQR && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-bold mb-4">Scan QR Code</h2>
+            <p className="text-gray-600 mb-4">
+              Scan the QR code to submit your attendance.
+            </p>
+            <div className="flex justify-center">
+              <QRCode value={qrValue} size={256} />
+            </div>
+            <button
+              onClick={() => setShowQR(false)}
+              className="mt-4 w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
