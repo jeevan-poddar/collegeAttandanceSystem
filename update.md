@@ -29,4 +29,4 @@
 
 25. create api for all actions
 
-26. add ai in faculty allocation
+<!-- 26. add ai in faculty allocation -->

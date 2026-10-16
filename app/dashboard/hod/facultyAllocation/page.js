@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { getSubjects } from "@/app/action/subjects/subjectActions";
 import { callWithRole } from "@/app/utlis/callWithRole";
+import { gemini } from "@/app/action/gemini/gem";
 
 const Page = () => {
   const role = useSelector((state) => state.user.role);
@@ -21,6 +22,8 @@ const Page = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState({ type: "", message: "" });
+  const [image, setImage] = useState(null);
+  const [prompt, setPrompt] = useState("");
 
   const {
     register,
@@ -36,6 +39,7 @@ const Page = () => {
         faculty_id: null,
         batch_id: null,
         subject_id: null,
+        batch_group: null,
       },
     ]);
     setNotification({ type: "", message: "" });
@@ -51,6 +55,13 @@ const Page = () => {
     setDataToInsert((prevData) =>
       prevData.filter((_, idx) => idx !== indexToRemove),
     );
+  };
+  const getSelectedLabel = (options, matchField, matchValue, labelField) => {
+    const matchedOption = options.find(
+      (option) => option?.[matchField] === matchValue,
+    );
+
+    return matchedOption?.[labelField] || "";
   };
 
   const handleSubmitAllocation = async () => {
@@ -197,6 +208,38 @@ const Page = () => {
     };
     fetachData();
   }, [role, sessionYear]);
+
+  useEffect(() => {
+    setPrompt(`You are an expert data extraction assistant. Your task is to extract a faculty allocation table from the provided image and format the output strictly as valid JSON according to the schema specified below.
+  
+  ### Input Data
+  - **Batch Details (JSON):** ${allBatches ? JSON.stringify(allBatches) : "[]"}
+  - **Faculty Details (JSON):** ${allFaculty ? JSON.stringify(allFaculty) : "[]"}
+  - **Subject Details (JSON):** ${allSubjects ? JSON.stringify(allSubjects) : "[]"}
+  
+  ### Extraction Rules
+  1. The input lists above are the complete lookup tables. Each object has a database "id" and identifying code/name fields.
+  2. Never use the row number, serial number, array index, batch code, subject code, subject name, faculty name, or any other value as an ID.
+  3. "batch_id" must be the exact database "id" from the Batch Details object whose "batch_code" matches the batch shown in the image. Do not return the batch_code itself.
+  4. "subject_id" must be the exact database "id" from the Subject Details object whose "subject_code" or "subject_name" matches the subject shown in the image. Do not return the subject code or array position.
+  5. "faculty_id" must be the exact database "id" from the Faculty Details object whose "name" matches the faculty shown in the image. Do not return the faculty name or array position.
+  6. "batch_group" must be one of the following values:
+     - "null" (for all/entire batch)
+     - "G1" (for Group 1)
+     - "G2" (for Group 2)
+  
+  ### Output Format
+  Return ONLY a valid JSON array of objects following this structure. Do not include any text, notes, or markdown formatting outside the JSON block.
+  
+  [
+    {
+      "batch_id": 1,
+      "subject_id": 101,
+      "faculty_id": 501,
+      "batch_group": null
+    }
+  ]`);
+  }, [allBatches, allFaculty, allSubjects]);
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen bg-gray-50 space-y-8">
       <div>
@@ -316,7 +359,12 @@ const Page = () => {
                         insert={{ faculty_id: "id" }}
                         setDataToInsert={setDataToInsert}
                         index={index}
-                        // defaultValue={row.facultyName}
+                        defaultValue={getSelectedLabel(
+                          allFaculty,
+                          "id",
+                          row.faculty_id,
+                          "name",
+                        )}
                         updateRow={updateRow}
                         mode="option"
                         placeholder="Select Faculty"
@@ -334,7 +382,12 @@ const Page = () => {
                         insert={{ batch_id: "id" }}
                         setDataToInsert={setDataToInsert}
                         index={index}
-                        // defaultValue={row.batchCode}
+                        defaultValue={getSelectedLabel(
+                          allBatches,
+                          "id",
+                          row.batch_id,
+                          "batch_code",
+                        )}
                         updateRow={updateRow}
                         mode="option"
                         placeholder="Select Batch"
@@ -347,7 +400,12 @@ const Page = () => {
                         insert={{ subject_id: "id" }}
                         setDataToInsert={setDataToInsert}
                         index={index}
-                        // defaultValue={row.subjectCode}
+                        defaultValue={getSelectedLabel(
+                          allSubjects,
+                          "id",
+                          row.subject_id,
+                          "subject_code",
+                        )}
                         updateRow={updateRow}
                         mode="option"
                         placeholder="Select Subject"
@@ -364,8 +422,6 @@ const Page = () => {
                         <option value="">All / General</option>
                         <option value="G1">G1</option>
                         <option value="G2">G2</option>
-                        <option value="G3">G3</option>
-                        <option value="G4">G4</option>
                       </select>
                     </td>
                     <td className="p-2.5 text-center align-middle ">
@@ -393,6 +449,28 @@ const Page = () => {
             </tbody>
           </table>
         </div>
+      </div>
+      <div className="">
+        <p>Click the image</p>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setImage(e.target.files[0])}
+        />
+        <button
+          onClick={async () => {
+            console.log("Image:", image);
+            const data = await gemini(image, prompt);
+            console.log("Data from Gemini API:", data);
+            if (!data) {
+              console.error("No data returned from Gemini API.");
+              return;
+            }
+            setDataToInsert((dataToInsert) => [...dataToInsert, ...data]);
+          }}
+        >
+          Send Image
+        </button>
       </div>
     </div>
   );

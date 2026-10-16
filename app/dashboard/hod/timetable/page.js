@@ -23,6 +23,7 @@ const TimetablePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState({ type: "", message: "" });
   const [image, setImage] = useState(null);
+  const [prompt, setPrompt] = useState("")
 
   const {
     register,
@@ -267,6 +268,46 @@ const TimetablePage = () => {
     }
     fetchData();
   }, [role, sessionYear]);
+
+  useEffect(() => {
+    setPrompt(`You are an expert data extraction assistant. Your task is to extract a class timetable from the provided image and format the output strictly as valid JSON according to the schema specified below.
+
+### Input Data
+- **Batch Details (JSON):** ${allBatches ? JSON.stringify(allBatches) : "[]"}
+- **Faculty Details (JSON):** ${allFaculty ? JSON.stringify(allFaculty) : "[]"}
+- **Subject Details (JSON):** ${allSubjects ? JSON.stringify(allSubjects) : "[]"}
+
+### Extraction Rules
+1. The input lists above are the complete lookup tables. Each object has a database "id" and identifying code/name fields.
+2. Never use the row number, serial number, array index, batch code, subject code, subject name, faculty name, or any other value as an ID.
+3. "batch_id" must be the exact database "id" from the Batch Details object whose "batch_code" matches the batch shown in the image. Do not return the batch_code itself.
+4. "subject_id" must be the exact database "id" from the Subject Details object whose "subject_code" or "subject_name" matches the subject shown in the image. Do not return the subject code or array position.
+5. "faculty_id" must be the exact database "id" from the Faculty Details object whose "name" matches the faculty shown in the image. Do not return the faculty name or array position.
+6. If a timetable entry cannot be matched confidently to an object in the relevant lookup table, do not guess an ID; omit that entry or return null for the unmatched ID.
+7. "day_of_week" : Integer representing the day of the week (e.g., 1 for Monday, 2 for Tuesday, etc.).
+8. "period_number": Integer representing the schedule period/slot number.
+9. "room_no": String or integer indicating the assigned classroom/lab number.
+10. "batch_group": Options are:
+   - "null" (for all/entire batch)
+   - "G1" (for Group 1)
+   - "G2" (for Group 2)
+
+### Output Format
+Return ONLY a valid JSON array of objects following this structure. Do not include any text, notes, or markdown formatting outside the JSON block.
+
+[
+  {
+    "batch_id": 1,
+    "subject_id": 101,
+    "faculty_id": 501,
+    "day_of_week": 1,
+    "period_number": 1,
+    "room_no": "301",
+    "batch_group": null
+  }
+]`);
+  }, [allBatches, allFaculty, allSubjects]);
+  
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen bg-gray-50 space-y-6">
@@ -567,9 +608,13 @@ const TimetablePage = () => {
         <button
           onClick={async () => {
             console.log("Image:", image);
-            const data = await gemini(image, allBatches, allFaculty, allSubjects);
+            const data = await gemini(image,prompt);
+            if (!data) {
+              console.error("No data returned from Gemini API.");
+              return;
+            }
             console.log("Data from Gemini API:", data);
-            setDataToInsert(data || []);
+            setDataToInsert( dataToInsert => [...dataToInsert, ...data] );
           }}
         >
           Send Image
