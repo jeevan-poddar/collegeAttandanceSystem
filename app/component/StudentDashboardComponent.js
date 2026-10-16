@@ -39,7 +39,7 @@ const StudentDashboardComponent = ({
   const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [sessionYearFilter, setSessionYearFilter] = useState("2026-2027");
+  const [sessionYearFilter, setSessionYearFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBatch, setSelectedBatch] = useState(null);
 

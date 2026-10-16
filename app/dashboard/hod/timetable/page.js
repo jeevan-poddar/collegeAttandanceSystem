@@ -11,6 +11,7 @@ import { createTimetable } from "@/app/action/timetable/createTimetable";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { getSubjects } from "@/app/action/subjects/subjectActions";
 import { callWithRole } from "@/app/utlis/callWithRole";
+import { gemini } from "@/app/action/gemini/gem";
 
 const TimetablePage = () => {
   const role = useSelector((state) => state.user.role);
@@ -21,6 +22,7 @@ const TimetablePage = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState({ type: "", message: "" });
+  const [image, setImage] = useState(null);
 
   const {
     register,
@@ -39,6 +41,7 @@ const TimetablePage = () => {
         day_of_week: 1,
         period_number: null,
         room_no: null,
+        batch_group: null,
       },
     ]);
     setNotification({ type: "", message: "" });
@@ -519,8 +522,6 @@ const TimetablePage = () => {
                         <option value="">All</option>
                         <option value="G1">G1</option>
                         <option value="G2">G2</option>
-                        <option value="G3">G3</option>
-                        <option value="G4">G4</option>
                       </select>
                     </td>
                     <td className="p-2.5 text-center align-middle">
@@ -555,6 +556,24 @@ const TimetablePage = () => {
             </tbody>
           </table>
         </div>
+      </div>
+      <div className="">
+        <p>Click the image</p>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setImage(e.target.files[0])}
+        />
+        <button
+          onClick={async () => {
+            console.log("Image:", image);
+            const data = await gemini(image, allBatches, allFaculty, allSubjects);
+            console.log("Data from Gemini API:", data);
+            setDataToInsert(data || []);
+          }}
+        >
+          Send Image
+        </button>
       </div>
     </div>
   );
