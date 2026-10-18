@@ -1,12 +1,4 @@
--- QR scans are created by the authenticated student and then actioned by the
--- class faculty member (or an HOD). Apply this after 005AttendancePolicy.sql.
-ALTER TABLE attendance ALTER COLUMN marked_by DROP NOT NULL;
-UPDATE attendance
-SET is_verified = true
-WHERE is_verified IS NULL OR marked_by IS NOT NULL;
-ALTER TABLE attendance ALTER COLUMN is_verified SET DEFAULT false;
-ALTER TABLE attendance ALTER COLUMN is_verified SET NOT NULL;
-ALTER TABLE attendance ALTER COLUMN status SET DEFAULT 'present';
+
 
 DROP POLICY IF EXISTS attendance_insert_policy ON attendance;
 DROP POLICY IF EXISTS attendance_update_policy ON attendance;

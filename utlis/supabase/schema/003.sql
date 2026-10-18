@@ -1,13 +1,12 @@
--- 1. Add group to student enrollments (e.g., a student is in 'G1')
-ALTER TABLE student_batches ADD COLUMN batch_group VARCHAR;
+-- ====================================================================================
+-- AUTOMATION FUNCTION: Generate Sessions from Timetable
+-- ====================================================================================
+-- You can run this function every Sunday night via Supabase pg_cron, or call it from 
+-- your Next.js API/Server Action passing the start and end dates of the week.
 
--- 2. Add group to allocations (Prof. A teaches G1, Prof. B teaches G2)
-ALTER TABLE faculty_allocations ADD COLUMN batch_group VARCHAR;
 
--- 3. Add group to the timetable and sessions
-ALTER TABLE timetable_master ADD COLUMN batch_group VARCHAR;
-ALTER TABLE class_sessions ADD COLUMN batch_group VARCHAR;
-
+-- Example of how to call it from your Supabase SQL Editor to generate next week:
+-- SELECT generate_weekly_sessions('2026-08-03', '2026-08-09')
 CREATE OR REPLACE FUNCTION generate_weekly_sessions(start_date DATE, end_date DATE)
 RETURNS VOID AS $$
 DECLARE
@@ -57,11 +56,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+SELECT cron.schedule(
+  'generate-weekly-sessions-job', -- A unique name for your cron job
+  '0 0 * * 0',                    -- Cron expression: Every Sunday at 00:00 (Midnight)
+  $$ 
+    -- The SQL query to run dynamically calculates the next 7 days
+    SELECT generate_weekly_sessions(
+      CURRENT_DATE, 
+      CURRENT_DATE + integer '6'
+    ); 
+  $$
+);
 
-
-ALTER TABLE faculty_allocations
-DROP CONSTRAINT faculty_allocations_faculty_id_batch_id_subject_id_key;
-
-ALTER TABLE faculty_allocations
-ADD CONSTRAINT faculty_allocations_faculty_id_batch_id_subject_id_batch_group_key
-UNIQUE (faculty_id, batch_id, subject_id, batch_group);
+-- Run the same session-generation logic immediately for a manual test:
+-- SELECT generate_weekly_sessions(CURRENT_DATE, CURRENT_DATE + INTEGER '6');
