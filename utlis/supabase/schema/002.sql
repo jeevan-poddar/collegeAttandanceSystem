@@ -23,7 +23,6 @@ create table batches(
     batch_code varchar not null,
     session_year varchar not null,
     semester integer not null,
-    -- branch varchar not null,
     course varchar not null,
     room_no varchar not null,
     status batch_status not null,
@@ -97,7 +96,7 @@ CREATE TABLE class_sessions (
     status session_status DEFAULT 'scheduled',
     is_proxy BOOLEAN DEFAULT FALSE,
     is_extra_class BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT current_timestamp
+    created_at TIMESTAMP DEFAULT current_timestamp,
 );
 CREATE TABLE attendance (
     id SERIAL PRIMARY KEY,

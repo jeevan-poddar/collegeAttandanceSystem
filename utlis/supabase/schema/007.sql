@@ -1,15 +1,15 @@
 Create table departments (
     id serial primary key,
-    name varchar(100) not null,
-    s_name varchar not null
+    name varchar(100) UNIQUE NOT NULL,
+    s_name varchar UNIQUE NOT NULL
 );
 
 create table hod (
     id serial primary key,
     user_id uuid references users(id),
-    department_id int references departments(id),
-    email varchar not null unique,
+    department_id int UNIQUE NOT NULL references departments(id),
     name varchar not null,
+    email varchar not null unique,
     phone numeric(10, 0) unique not null,
     created_at timestamp default current_timestamp
 );
