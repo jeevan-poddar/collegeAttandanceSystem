@@ -7,7 +7,7 @@ create table students (
     user_id uuid unique not null references "users"(id) on delete cascade,
     name varchar not null,
     email varchar unique not null,
-    phone numeric(10, 0) not null,
+    phone numeric(10, 0) not null unique,
     parent_name varchar not null,
     c_roll_number integer unique not null,
     u_roll_number bigint unique not null,
@@ -30,7 +30,6 @@ create table batches(
     created_at timestamp default current_timestamp,
     UNIQUE(batch_code, session_year, semester, course, department_id)
 );
-
 
 create table student_batches(
     id serial primary key,
@@ -85,6 +84,7 @@ CREATE TABLE timetable_master (
     UNIQUE(batch_id, day_of_week, period_number, batch_group),
     UNIQUE(batch_id,faculty_id, day_of_week, period_number, batch_group)
 );
+
 CREATE TABLE class_sessions (
     id SERIAL PRIMARY KEY,
     timetable_master_id INTEGER REFERENCES timetable_master(id) ON DELETE SET NULL,

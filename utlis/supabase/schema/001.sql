@@ -1,7 +1,7 @@
 -- 1. Create the users table used by the auth trigger
 CREATE TABLE IF NOT EXISTS public.users (
   id uuid PRIMARY KEY,
-  full_name text,
+  full_name text not null,
   email text NOT NULL UNIQUE,
   role text NOT NULL DEFAULT 'unknown',
   created_at timestamptz NOT NULL DEFAULT timezone('utc'::text, now())
