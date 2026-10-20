@@ -31,7 +31,7 @@ export async function generateAttendanceToken(sessionId) {
         .from("class_sessions")
         .select("id")
         .eq("id", normalizedSessionId)
-        .eq("actual_faculty_id", faculty.id)
+        .eq("faculty_id", faculty.id)
         .single();
       if (sessionError || !session) {
         return {

@@ -23,11 +23,9 @@ BEGIN
             batch_id,
             batch_group,     -- NEW: Added this
             subject_id,
-            actual_faculty_id,
+            faculty_id,
             session_date,
-            status,
-            is_proxy,
-            is_extra_class
+            status
         )
         SELECT
             tm.id,
@@ -36,9 +34,7 @@ BEGIN
             tm.subject_id,
             tm.faculty_id,
             current_date_val,
-            'scheduled'::session_status,
-            FALSE,
-            FALSE
+            'scheduled'::session_status
         FROM timetable_master tm
         INNER JOIN batches b
             ON b.id = tm.batch_id

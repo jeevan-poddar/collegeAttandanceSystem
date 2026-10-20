@@ -42,7 +42,7 @@ export async function getClassSessions() {
     const timetableIds = myTimetables?.map((t) => t.id) || [];
 
     // Step 2: Build the OR string safely for a single table
-    let orQuery = `actual_faculty_id.eq.${facultyId}`;
+    let orQuery = `faculty_id.eq.${facultyId}`;
     if (timetableIds.length > 0) {
       // Add the second condition: "OR the timetable_master_id is in this list of IDs"
       orQuery += `,timetable_master_id.in.(${timetableIds.join(",")})`;
@@ -55,13 +55,12 @@ export async function getClassSessions() {
       id,
       session_date,
       status,
-      is_proxy,
-      actual_faculty_id,
+      faculty_id,
       batch_group,
       batches ( id, batch_code, semester, department_id, course, status, departments(id, s_name) ),
       subjects ( subject_name ),
       attendance ( count ),
-      timetable_master!inner ( period_number, room_no, faculty_id, batch_group )
+      timetable_master ( period_number, room_no, faculty_id, batch_group )
     `,
       )
       .gte("session_date", startDate.toISOString()) // Good practice to format dates to ISO
@@ -87,23 +86,27 @@ export async function getClassSessions() {
       return {
         id: session.id,
         day: dayName,
-        period: session.timetable_master.period_number,
+        period: session.timetable_master?.period_number ?? null,
         subject: session.subjects.subject_name,
         batchId: session.batches.id,
         batch_code: session.batches.batch_code,
         batch_group:
           session.batch_group || session.timetable_master?.batch_group || null,
         sem: session.batches.semester,
-        room: session.timetable_master.room_no,
+        room: session.timetable_master?.room_no ?? null,
         branch: session.batches.departments?.s_name || "",
         course: session.batches.course,
         batch_status: session.batches.status,
         attendance_marked: (session.attendance?.[0]?.count || 0) > 0,
-        is_proxy: session.is_proxy,
-        // If they are not the actual teacher, someone else is taking it (Proxy)
+        class_type: !session.timetable_master
+          ? "extra"
+          : session.faculty_id !== session.timetable_master.faculty_id
+            ? "proxy"
+            : "normal",
         proxy_teacher:
-          session.is_proxy && session.actual_faculty_id !== facultyId
-            ? session.actual_faculty_id
+          session.timetable_master &&
+          session.faculty_id !== session.timetable_master.faculty_id
+            ? session.faculty_id
             : null,
         status: session.status,
         session_date: session.session_date,

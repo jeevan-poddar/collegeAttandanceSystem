@@ -25,7 +25,7 @@ WITH CHECK (
     (auth.jwt() ->> 'user_role') = 'faculty'
     AND EXISTS (
       SELECT 1 FROM faculty f
-      JOIN class_sessions cs ON cs.actual_faculty_id = f.id
+      JOIN class_sessions cs ON cs.faculty_id = f.id
       WHERE f.id = attendance.marked_by
         AND f.user_id = auth.uid()
         AND cs.id = attendance.class_session_id
@@ -41,7 +41,7 @@ USING (
   (auth.jwt() ->> 'user_role') = 'hod'
   OR EXISTS (
     SELECT 1 FROM faculty f
-    JOIN class_sessions cs ON cs.actual_faculty_id = f.id
+    JOIN class_sessions cs ON cs.faculty_id = f.id
     WHERE (auth.jwt() ->> 'user_role') = 'faculty'
       AND f.user_id = auth.uid()
       AND cs.id = attendance.class_session_id
@@ -51,7 +51,7 @@ WITH CHECK (
   (auth.jwt() ->> 'user_role') = 'hod'
   OR EXISTS (
     SELECT 1 FROM faculty f
-    JOIN class_sessions cs ON cs.actual_faculty_id = f.id
+    JOIN class_sessions cs ON cs.faculty_id = f.id
     WHERE (auth.jwt() ->> 'user_role') = 'faculty'
       AND f.user_id = auth.uid()
       AND f.id = attendance.marked_by
@@ -67,7 +67,7 @@ USING (
   (auth.jwt() ->> 'user_role') = 'hod'
   OR EXISTS (
     SELECT 1 FROM faculty f
-    JOIN class_sessions cs ON cs.actual_faculty_id = f.id
+    JOIN class_sessions cs ON cs.faculty_id = f.id
     WHERE (auth.jwt() ->> 'user_role') = 'faculty'
       AND f.user_id = auth.uid()
       AND cs.id = attendance.class_session_id

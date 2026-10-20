@@ -90,13 +90,11 @@ CREATE TABLE class_sessions (
     timetable_master_id INTEGER REFERENCES timetable_master(id) ON DELETE SET NULL,
     batch_id INTEGER NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-    actual_faculty_id INTEGER NOT NULL REFERENCES faculty(id) ON DELETE CASCADE,
+    faculty_id INTEGER NOT NULL REFERENCES faculty(id) ON DELETE CASCADE,
     batch_group VARCHAR,
     session_date DATE NOT NULL,
     status session_status DEFAULT 'scheduled',
-    is_proxy BOOLEAN DEFAULT FALSE,
-    is_extra_class BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT current_timestamp,
+    created_at TIMESTAMP DEFAULT current_timestamp
 );
 CREATE TABLE attendance (
     id SERIAL PRIMARY KEY,

@@ -23,7 +23,7 @@ WITH CHECK (
       SELECT 1
       FROM faculty f
       JOIN class_sessions cs
-        ON cs.actual_faculty_id = f.id
+        ON cs.faculty_id = f.id
       WHERE f.id = attendance.marked_by
         AND f.user_id = auth.uid()
         AND cs.id = attendance.class_session_id
@@ -41,7 +41,7 @@ USING (
     SELECT 1
     FROM faculty f
     JOIN class_sessions cs
-      ON cs.actual_faculty_id = f.id
+      ON cs.faculty_id = f.id
     WHERE (auth.jwt() ->> 'user_role') = 'faculty'
       AND f.user_id = auth.uid()
       AND f.id = attendance.marked_by
@@ -56,7 +56,7 @@ WITH CHECK (
       SELECT 1
       FROM faculty f
       JOIN class_sessions cs
-        ON cs.actual_faculty_id = f.id
+        ON cs.faculty_id = f.id
       WHERE f.id = attendance.marked_by
         AND f.user_id = auth.uid()
         AND cs.id = attendance.class_session_id

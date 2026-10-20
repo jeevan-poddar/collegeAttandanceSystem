@@ -1,14 +1,7 @@
 "use client";
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import React from "react";
 
 const Cell = (props) => {
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm();
   const canMarkAttendance =
     ["scheduled", "completed"].includes(props.selectedSession?.status) &&
     props.selectedSession?.batch_status === "active";
@@ -72,36 +65,6 @@ const Cell = (props) => {
             {props.selectedSession?.room || "N/A"}
           </span>
         </div>
-      </div>
-
-      {/* Proxy Form */}
-      <div className="pt-1">
-        <form onSubmit={handleSubmit(props.onSubmit)} className="space-y-3">
-          <label
-            htmlFor="is_proxy_toggle"
-            className="inline-flex items-center space-x-3 cursor-pointer select-none"
-          >
-            <input
-              type="checkbox"
-              id="is_proxy_toggle"
-              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-              {...register("is_proxy")}
-            />
-            <span className="text-sm font-medium text-gray-800">Mark as Proxy</span>
-          </label>
-
-          {watch("is_proxy") && (
-            <div className="mt-2">
-              <input
-                id="proxyFaculty"
-                placeholder="Enter proxy teacher name..."
-                className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                type="text"
-                {...register("proxy_faculty")}
-              />
-            </div>
-          )}
-        </form>
       </div>
 
       {/* Action Button */}

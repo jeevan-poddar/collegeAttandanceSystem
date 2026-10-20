@@ -23,7 +23,7 @@ async function getSessionApprover(supabase, sessionId, auth) {
 
   const { data: session, error: sessionError } = await supabase
     .from("class_sessions")
-    .select("id, actual_faculty_id")
+    .select("id, faculty_id")
     .eq("id", normalizedSessionId)
     .single();
 
@@ -32,7 +32,7 @@ async function getSessionApprover(supabase, sessionId, auth) {
   }
 
   if (auth.userRole === "hod") {
-    return { success: true, sessionId: normalizedSessionId, facultyId: session.actual_faculty_id };
+    return { success: true, sessionId: normalizedSessionId, facultyId: session.faculty_id };
   }
 
   const { data: faculty, error: facultyError } = await supabase
@@ -41,7 +41,7 @@ async function getSessionApprover(supabase, sessionId, auth) {
     .eq("user_id", auth.userId)
     .single();
 
-  if (facultyError || !faculty || faculty.id !== session.actual_faculty_id) {
+  if (facultyError || !faculty || faculty.id !== session.faculty_id) {
     return { success: false, error: "You are not allowed to approve this session's attendance." };
   }
 
